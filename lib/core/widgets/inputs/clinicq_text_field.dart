@@ -22,6 +22,8 @@ class ClinicQTextField extends StatefulWidget {
     this.textStyle,
     this.hintStyle,
     this.borderRadius = 12,
+    this.onChanged,
+    this.onSubmitted,
   });
 
   final String? label;
@@ -42,6 +44,8 @@ class ClinicQTextField extends StatefulWidget {
   final TextStyle? textStyle;
   final TextStyle? hintStyle;
   final double borderRadius;
+  final ValueChanged<String>? onChanged;
+  final ValueChanged<String>? onSubmitted;
 
   @override
   State<ClinicQTextField> createState() => _ClinicQTextFieldState();
@@ -136,6 +140,8 @@ class _ClinicQTextFieldState extends State<ClinicQTextField> {
       readOnly: widget.readOnly,
       enabled: widget.enabled,
       onTap: widget.onTap,
+      onChanged: widget.onChanged,
+      onSubmitted: widget.onSubmitted,
       focusNode: _focusNode,
       style: widget.textStyle ??
           theme.textTheme.bodyMedium?.copyWith(

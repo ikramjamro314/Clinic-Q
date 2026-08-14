@@ -3,12 +3,12 @@ import 'package:flutter/foundation.dart';
 @immutable
 class ClinicEntity {
   final String id;
-  final String name;
+  final String name; // maps to clinicName
   final String? imageUrl;
-  final String specialtyTag;
+  final String specialtyTag; // first of specialties or default
   final double rating;
   final int reviewCount;
-  final String openingHours;
+  final String openingHours; // constructed from openTime/closeTime/workingDays
   final String address;
   final int doctorCount;
   final String phone;
@@ -16,6 +16,25 @@ class ClinicEntity {
   final String specialistCount;
   final String yearsExperience;
   final bool isOpen;
+
+  // Real API fields
+  final String? ownerId;
+  final String? clinicName;
+  final String? tagline;
+  final String? description;
+  final String? city;
+  final String? state;
+  final String? zipCode;
+  final String? email;
+  final String? website;
+  final String? openTime;
+  final String? closeTime;
+  final List<String> workingDays;
+  final List<String> specialties;
+  final List<String> facilities;
+  final bool emergencyServices;
+  final String? createdAt;
+  final String? updatedAt;
 
   const ClinicEntity({
     required this.id,
@@ -32,6 +51,23 @@ class ClinicEntity {
     required this.specialistCount,
     required this.yearsExperience,
     this.isOpen = true,
+    this.ownerId,
+    this.clinicName,
+    this.tagline,
+    this.description,
+    this.city,
+    this.state,
+    this.zipCode,
+    this.email,
+    this.website,
+    this.openTime,
+    this.closeTime,
+    this.workingDays = const [],
+    this.specialties = const [],
+    this.facilities = const [],
+    this.emergencyServices = false,
+    this.createdAt,
+    this.updatedAt,
   });
 
   ClinicEntity copyWith({
@@ -49,6 +85,23 @@ class ClinicEntity {
     String? specialistCount,
     String? yearsExperience,
     bool? isOpen,
+    String? ownerId,
+    String? clinicName,
+    String? tagline,
+    String? description,
+    String? city,
+    String? state,
+    String? zipCode,
+    String? email,
+    String? website,
+    String? openTime,
+    String? closeTime,
+    List<String>? workingDays,
+    List<String>? specialties,
+    List<String>? facilities,
+    bool? emergencyServices,
+    String? createdAt,
+    String? updatedAt,
   }) {
     return ClinicEntity(
       id: id ?? this.id,
@@ -65,6 +118,24 @@ class ClinicEntity {
       specialistCount: specialistCount ?? this.specialistCount,
       yearsExperience: yearsExperience ?? this.yearsExperience,
       isOpen: isOpen ?? this.isOpen,
+      ownerId: ownerId ?? this.ownerId,
+      clinicName: clinicName ?? this.clinicName,
+      tagline: tagline ?? this.tagline,
+      description: description ?? this.description,
+      city: city ?? this.city,
+      state: state ?? this.state,
+      zipCode: zipCode ?? this.zipCode,
+      email: email ?? this.email,
+      website: website ?? this.website,
+      openTime: openTime ?? this.openTime,
+      closeTime: closeTime ?? this.closeTime,
+      workingDays: workingDays ?? this.workingDays,
+      specialties: specialties ?? this.specialties,
+      facilities: facilities ?? this.facilities,
+      emergencyServices: emergencyServices ?? this.emergencyServices,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
     );
   }
 }
+

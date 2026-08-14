@@ -40,7 +40,7 @@ class _ClinicScreenState extends ConsumerState<ClinicScreen> {
         elevation: 0,
         automaticallyImplyLeading: false, // No back button
         title: const Text(
-          'Find hospital',
+          'Find Clinics',
           style: TextStyle(
             color: ClinicQColors.textPrimary,
             fontSize: 20,
@@ -78,6 +78,7 @@ class _ClinicScreenState extends ConsumerState<ClinicScreen> {
                         isPill: false,
                         borderRadius: 16,
                         fillColor: Colors.white,
+                        onChanged: clinicNotifier.searchClinics,
                         onSuffixIconPressed: () {
                           _searchController.clear();
                           clinicNotifier.searchClinics('');
@@ -91,7 +92,7 @@ class _ClinicScreenState extends ConsumerState<ClinicScreen> {
 
                       // All Hospitals Section
                       const HomeSectionHeader(
-                        title: 'All Hospital',
+                        title: 'All Clinics',
                         showAction: false,
                       ),
                       const SizedBox(height: 14),
@@ -106,8 +107,9 @@ class _ClinicScreenState extends ConsumerState<ClinicScreen> {
                           return ClinicListCard(
                             clinic: clinic,
                             onTap: () {
-                              context.push(AppRoutes.clinicViewWithId(
-                                  clinicId: clinic.id));
+                              context.push(
+                                AppRoutes.clinicViewWithId(clinicId: clinic.id),
+                              );
                             },
                           );
                         },

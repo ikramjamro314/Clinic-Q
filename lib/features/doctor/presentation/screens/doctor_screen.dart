@@ -102,6 +102,7 @@ class _DoctorScreenState extends ConsumerState<DoctorScreen> {
                         isPill: false,
                         borderRadius: 16,
                         fillColor: Colors.white,
+                        onChanged: doctorNotifier.searchDoctors,
                         onSuffixIconPressed: () {
                           _searchController.clear();
                           doctorNotifier.searchDoctors('');

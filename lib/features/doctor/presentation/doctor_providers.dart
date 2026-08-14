@@ -4,20 +4,21 @@ import 'package:clinic_q/features/doctor/presentation/viewmodels/filter_state.da
 import 'package:clinic_q/features/doctor/presentation/viewmodels/filter_view_model.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../auth/presentation/auth_providers.dart';
 import '../data/repositories/doctor_repository_impl.dart';
-import '../data/services/supabase_doctor_service.dart';
 import '../domain/repositories/doctor_repository.dart';
 import 'viewmodels/doctor_state.dart';
 import 'viewmodels/doctor_view_model.dart';
 
-final supabaseDoctorServiceProvider = Provider<SupabaseDoctorService>((ref) {
-  final client = ref.watch(supabaseClientProvider);
-  return SupabaseDoctorService(client);
+import '../../../core/network/dio_client.dart';
+import '../data/services/doctor_api_service.dart';
+
+final doctorApiServiceProvider = Provider<DoctorApiService>((ref) {
+  final dio = ref.watch(dioProvider);
+  return DoctorApiService(dio);
 });
 
 final doctorRepositoryProvider = Provider<DoctorRepository>((ref) {
-  final service = ref.watch(supabaseDoctorServiceProvider);
+  final service = ref.watch(doctorApiServiceProvider);
   return DoctorRepositoryImpl(service);
 });
 

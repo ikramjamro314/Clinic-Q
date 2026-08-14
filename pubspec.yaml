@@ -49,6 +49,7 @@ dependencies:
   flutter_svg: ^2.2.4
   supabase_flutter: ^2.16.0
   curved_navigation_bar: ^1.0.3
+  dio: ^5.11.0
 
 dev_dependencies:
   flutter_test:

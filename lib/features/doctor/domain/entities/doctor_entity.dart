@@ -4,17 +4,26 @@ import 'package:flutter/foundation.dart';
 class DoctorEntity {
   final String id;
   final String name;
-  final String specialty;
-  final String clinicName;
-  final String? photoUrl;
+  final String specialty; // maps to specialization
+  final String clinicName; // maps to clinicId or fallback
+  final String? photoUrl; // maps to image
   final double rating;
   final int reviewCount;
-  final double price;
-  final int durationMinutes;
+  final double price; // maps to consultationFee
+  final int durationMinutes; // maps to avgServiceDuration
   final bool isInterested;
   final bool isAvailable;
-  final String? about;
+  final String? about; // maps to qualification or fallback
   final String? location;
+
+  // API fields
+  final String? clinicId;
+  final String? qualification;
+  final int? experience;
+  final List<String> workingDays;
+  final String? startTime;
+  final String? endTime;
+  final int? maxTokensPerDay;
 
   const DoctorEntity({
     required this.id,
@@ -30,6 +39,13 @@ class DoctorEntity {
     this.isAvailable = true,
     this.about,
     this.location,
+    this.clinicId,
+    this.qualification,
+    this.experience,
+    this.workingDays = const [],
+    this.startTime,
+    this.endTime,
+    this.maxTokensPerDay,
   });
 
   DoctorEntity copyWith({
@@ -46,6 +62,13 @@ class DoctorEntity {
     bool? isAvailable,
     String? about,
     String? location,
+    String? clinicId,
+    String? qualification,
+    int? experience,
+    List<String>? workingDays,
+    String? startTime,
+    String? endTime,
+    int? maxTokensPerDay,
   }) {
     return DoctorEntity(
       id: id ?? this.id,
@@ -61,6 +84,14 @@ class DoctorEntity {
       isAvailable: isAvailable ?? this.isAvailable,
       about: about ?? this.about,
       location: location ?? this.location,
+      clinicId: clinicId ?? this.clinicId,
+      qualification: qualification ?? this.qualification,
+      experience: experience ?? this.experience,
+      workingDays: workingDays ?? this.workingDays,
+      startTime: startTime ?? this.startTime,
+      endTime: endTime ?? this.endTime,
+      maxTokensPerDay: maxTokensPerDay ?? this.maxTokensPerDay,
     );
   }
 }
+

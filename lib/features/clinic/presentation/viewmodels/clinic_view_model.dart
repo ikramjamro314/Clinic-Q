@@ -16,7 +16,11 @@ class ClinicNotifier extends Notifier<ClinicState> {
     try {
       final repository = ref.read(clinicRepositoryProvider);
       
-      final all = await repository.getAllClinics();
+      final all = await repository.getAllClinics(
+        city: state.city,
+        specialty: state.specialty,
+        search: state.searchQuery,
+      );
 
       state = state.copyWith(
         isLoading: false,
@@ -33,7 +37,11 @@ class ClinicNotifier extends Notifier<ClinicState> {
     try {
       final repository = ref.read(clinicRepositoryProvider);
       
-      final all = await repository.getAllClinics(query: query);
+      final all = await repository.getAllClinics(
+        city: state.city,
+        specialty: state.specialty,
+        search: query,
+      );
 
       state = state.copyWith(
         isLoading: false,
@@ -41,6 +49,31 @@ class ClinicNotifier extends Notifier<ClinicState> {
       );
     } catch (e) {
       state = state.copyWith(isLoading: false, errorMessage: 'Search failed: $e');
+    }
+  }
+
+  /// Sets city and/or specialty filters and triggers a clinic refresh.
+  Future<void> filterClinics({String? city, String? specialty}) async {
+    state = state.copyWith(
+      city: city,
+      specialty: specialty,
+      isLoading: true,
+    ).clearError();
+
+    try {
+      final repository = ref.read(clinicRepositoryProvider);
+      final all = await repository.getAllClinics(
+        city: city,
+        specialty: specialty,
+        search: state.searchQuery,
+      );
+
+      state = state.copyWith(
+        isLoading: false,
+        clinics: all,
+      );
+    } catch (e) {
+      state = state.copyWith(isLoading: false, errorMessage: 'Failed to filter clinics: $e');
     }
   }
 

@@ -1,4 +1,5 @@
 import '../entities/user_entity.dart';
+import '../entities/user_profile.dart';
 
 abstract class AuthRepository {
   /// Sign out the currently authenticated user.
@@ -9,6 +10,9 @@ abstract class AuthRepository {
 
   /// Resend email OTP code.
   Future<void> resendEmailOtp({required String email});
+
+  /// Fetch the current user's profile details.
+  Future<UserProfile> getProfile();
 
   /// Update user profile.
   Future<void> updateProfile({

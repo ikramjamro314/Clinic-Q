@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' as sb;
 
+import '../../../core/network/dio_client.dart';
 import '../domain/repositories/auth_repository.dart';
 import '../data/repositories/supabase_auth_repository_impl.dart';
 import '../data/services/supabase_auth_service.dart';
@@ -20,9 +21,11 @@ final supabaseAuthServiceProvider = Provider<SupabaseAuthService>((ref) {
   return SupabaseAuthService(client);
 });
 
+
 final authRepositoryProvider = Provider<AuthRepository>((ref) {
   final supabaseService = ref.watch(supabaseAuthServiceProvider);
-  return SupabaseAuthRepositoryImpl(supabaseService);
+  final dio = ref.watch(dioProvider);
+  return SupabaseAuthRepositoryImpl(supabaseService, dio);
 });
 
 final authStateChangesProvider = StreamProvider<sb.AuthState>((ref) {

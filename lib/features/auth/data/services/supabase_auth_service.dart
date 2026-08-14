@@ -133,7 +133,7 @@ class SupabaseAuthService {
       final googleAccount = await gsi.GoogleSignIn.instance.authenticate();
 
       final googleAuthorization = await googleAccount.authorizationClient
-          .authorizationForScopes(<String>[]);
+          .authorizationForScopes(['email', 'profile']);
       final idToken = googleAccount.authentication.idToken;
       final accessToken = googleAuthorization?.accessToken;
 

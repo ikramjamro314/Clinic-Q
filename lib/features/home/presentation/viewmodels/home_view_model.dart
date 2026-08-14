@@ -1,49 +1,46 @@
 import 'package:clinic_q/features/auth/presentation/auth_providers.dart';
+import 'package:clinic_q/features/clinic/presentation/clinic_providers.dart';
+import 'package:clinic_q/features/doctor/presentation/doctor_providers.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'home_state.dart';
 
 class HomeNotifier extends Notifier<HomeState> {
   @override
   HomeState build() {
-    final profileState = ref.watch(profileViewModelProvider);
-    final currentUser = ref.watch(authRepositoryProvider).getCurrentUser();
-
-    String name = 'User';
-    if (profileState.name.trim().isNotEmpty) {
-      name = profileState.name.trim().split(' ').first;
-    } else if (currentUser != null &&
-        currentUser.firstName != null &&
-        currentUser.firstName!.trim().isNotEmpty) {
-      name = currentUser.firstName!.trim();
-    }
-
     // Schedule initial fetch after notifier is built
     Future.microtask(_loadHomeData);
-    return HomeState(isLoading: true, userName: name);
+    return const HomeState(isLoading: true, userName: '');
   }
 
   Future<void> _loadHomeData() async {
-    final profileState = ref.read(profileViewModelProvider);
-    final currentUser = ref.read(authRepositoryProvider).getCurrentUser();
-
-    String name = 'User';
-    if (profileState.name.trim().isNotEmpty) {
-      name = profileState.name.trim().split(' ').first;
-    } else if (currentUser != null &&
-        currentUser.firstName != null &&
-        currentUser.firstName!.trim().isNotEmpty) {
-      name = currentUser.firstName!.trim();
-    }
-
-    state = state.copyWith(isLoading: true, errorMessage: null, userName: name);
+    state = state.copyWith(isLoading: true, errorMessage: null);
 
     try {
+      String name = 'User';
+      try {
+        final profile = await ref.read(authRepositoryProvider).getProfile();
+        if (profile.name.trim().isNotEmpty) {
+          name = profile.name.trim().split(' ').first;
+        }
+      } catch (e) {
+        final profileState = ref.read(profileViewModelProvider);
+        final currentUser = ref.read(authRepositoryProvider).getCurrentUser();
+        if (profileState.name.trim().isNotEmpty) {
+          name = profileState.name.trim().split(' ').first;
+        } else if (currentUser != null &&
+            currentUser.firstName != null &&
+            currentUser.firstName!.trim().isNotEmpty) {
+          name = currentUser.firstName!.trim();
+        }
+      }
+
       final banner = await fetchActiveAppointmentBanner();
       final doctors = await fetchTopDoctors();
       final clinics = await fetchTopClinics();
 
       state = state.copyWith(
         isLoading: false,
+        userName: name,
         bannerData: banner,
         doctors: doctors,
         clinics: clinics,
@@ -67,56 +64,40 @@ class HomeNotifier extends Notifier<HomeState> {
     );
   }
 
-  /// TODO: Replace with doctor feature's getTopDoctors() method
+  /// Fetches top doctors from the database via DoctorRepository.
   Future<List<DoctorItem>> fetchTopDoctors() async {
-    // Mock/stub response for interested doctors list
-    await Future.delayed(const Duration(milliseconds: 100));
-    return const [
-      DoctorItem(
-        id: 'doc_1',
-        name: 'Dr. Anthony',
-        specialty: 'Obstetrics',
-        rating: 4.5,
-      ),
-      DoctorItem(
-        id: 'doc_2',
-        name: 'Dr. Nguyen',
-        specialty: 'Dermatology',
-        rating: 4.8,
-      ),
-      DoctorItem(
-        id: 'doc_3',
-        name: 'Dr. Patel',
-        specialty: 'Cardiology',
-        rating: 4.9,
-      ),
-    ];
+    final repository = ref.read(doctorRepositoryProvider);
+    final entities = await repository.getInterestedDoctors();
+    return entities
+        .map(
+          (doc) => DoctorItem(
+            id: doc.id,
+            name: doc.name,
+            specialty: doc.specialty,
+            rating: doc.rating,
+            avatarUrl: doc.photoUrl,
+            isAvailable: doc.isAvailable,
+          ),
+        )
+        .toList();
   }
 
-  /// TODO: Replace with clinic feature's getTopClinics() / getTopHospitals() method
+  /// Fetches top clinics from the database via ClinicRepository.
   Future<List<ClinicItem>> fetchTopClinics() async {
-    // Mock/stub response for top hospitals/clinics
-    await Future.delayed(const Duration(milliseconds: 100));
-    return const [
-      ClinicItem(
-        id: 'clinic_1',
-        name: 'Mayo Clinic',
-        address: '200 First St, MN',
-        rating: 4.9,
-      ),
-      ClinicItem(
-        id: 'clinic_2',
-        name: 'Cleveland Clinic',
-        address: '9500 Euclid Ave, OH',
-        rating: 4.8,
-      ),
-      ClinicItem(
-        id: 'clinic_3',
-        name: 'Johns Hopkins Hospital',
-        address: '1800 Orleans St, MD',
-        rating: 4.7,
-      ),
-    ];
+    final repository = ref.read(clinicRepositoryProvider);
+    final entities = await repository.getAllClinics();
+    final topEntities = entities.take(3).toList();
+    return topEntities
+        .map(
+          (clinic) => ClinicItem(
+            id: clinic.id,
+            name: clinic.name,
+            address: clinic.address,
+            imageUrl: clinic.imageUrl,
+            rating: clinic.rating,
+          ),
+        )
+        .toList();
   }
 
   void selectTab(int index) {

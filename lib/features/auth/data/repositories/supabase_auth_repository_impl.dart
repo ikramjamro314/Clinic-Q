@@ -1,17 +1,22 @@
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' as sb;
+import 'package:dio/dio.dart';
 
 import '../../../../core/error/exceptions.dart';
+import '../../../../core/network/api_response.dart';
 import '../../domain/entities/user_entity.dart';
+import '../../domain/entities/user_profile.dart';
 import '../../domain/repositories/auth_repository.dart';
 import '../models/user_model.dart';
+import '../models/user_profile_model.dart';
 import '../services/supabase_auth_service.dart';
 
 class SupabaseAuthRepositoryImpl implements AuthRepository {
   final SupabaseAuthService _service;
+  final Dio _dio;
 
-  SupabaseAuthRepositoryImpl(this._service);
+  SupabaseAuthRepositoryImpl(this._service, this._dio);
 
   // ── Sign in ───────────────────────────────────────────────────────────────
 
@@ -220,4 +225,19 @@ class SupabaseAuthRepositoryImpl implements AuthRepository {
       );
     }
   }
+
+  @override
+  Future<UserProfile> getProfile() async {
+    try {
+      final response = await _dio.get('/api/patient/profile');
+      final rawData = ApiResponse.process(response.data);
+      return UserProfileModel.fromJson(rawData as Map<String, dynamic>);
+    } on NetworkException {
+      rethrow;
+    } catch (e, stack) {
+      debugPrint('SupabaseAuthRepositoryImpl.getProfile failed: $e\n$stack');
+      throw NetworkException('Failed to load user profile: $e');
+    }
+  }
 }
+

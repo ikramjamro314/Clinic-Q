@@ -15,23 +15,53 @@ class DoctorModel extends DoctorEntity {
     super.isAvailable = true,
     super.about,
     super.location,
+    super.clinicId,
+    super.qualification,
+    super.experience,
+    super.workingDays,
+    super.startTime,
+    super.endTime,
+    super.maxTokensPerDay,
   });
 
+  static List<String> _parseList(dynamic field) {
+    if (field is List) {
+      return List<String>.from(field.map((e) => e.toString()));
+    } else if (field is String) {
+      if (field.trim().isEmpty) return const [];
+      return field.split(',').map((e) => e.trim()).toList();
+    }
+    return const [];
+  }
+
   factory DoctorModel.fromJson(Map<String, dynamic> json) {
+    final rawWorkingDays = _parseList(json['workingDays']);
+    
+    // Map qualification to about or fallback to mock
+    final computedAbout = json['qualification'] as String? ?? json['about'] as String? ?? 'No details available.';
+    final clinicIdVal = json['clinicId'] as String?;
+
     return DoctorModel(
-      id: json['id'] as String? ?? '',
+      id: json['id'] as String? ?? json['_id'] as String? ?? '',
       name: json['name'] as String? ?? '',
-      specialty: json['specialty'] as String? ?? '',
-      clinicName: json['clinic_name'] as String? ?? '',
-      photoUrl: json['photo_url'] as String?,
-      rating: (json['rating'] as num?)?.toDouble() ?? 0.0,
-      reviewCount: (json['review_count'] as num?)?.toInt() ?? 0,
-      price: (json['price'] as num?)?.toDouble() ?? 0.0,
-      durationMinutes: (json['duration_minutes'] as num?)?.toInt() ?? 15,
+      specialty: json['specialization'] as String? ?? json['specialty'] as String? ?? 'General',
+      clinicName: json['clinic_name'] as String? ?? (clinicIdVal != null ? 'Clinic ${clinicIdVal.substring(0, 4)}' : 'Clinic'),
+      photoUrl: json['image'] as String? ?? json['photo_url'] as String?,
+      rating: (json['rating'] as num?)?.toDouble() ?? 4.5,
+      reviewCount: (json['review_count'] as num?)?.toInt() ?? 80,
+      price: (json['consultationFee'] as num?)?.toDouble() ?? (json['price'] as num?)?.toDouble() ?? 1000.0,
+      durationMinutes: (json['avgServiceDuration'] as num?)?.toInt() ?? (json['duration_minutes'] as num?)?.toInt() ?? 15,
       isInterested: json['is_interested'] as bool? ?? false,
       isAvailable: json['is_available'] as bool? ?? true,
-      about: json['about'] as String?,
-      location: json['location'] as String?,
+      about: computedAbout,
+      location: json['location'] as String? ?? 'Pakistan',
+      clinicId: clinicIdVal,
+      qualification: json['qualification'] as String?,
+      experience: (json['experience'] as num?)?.toInt(),
+      workingDays: rawWorkingDays,
+      startTime: json['startTime'] as String?,
+      endTime: json['endTime'] as String?,
+      maxTokensPerDay: (json['maxTokensPerDay'] as num?)?.toInt(),
     );
   }
 
@@ -50,6 +80,13 @@ class DoctorModel extends DoctorEntity {
       'is_available': isAvailable,
       'about': about,
       'location': location,
+      'clinicId': clinicId,
+      'qualification': qualification,
+      'experience': experience,
+      'workingDays': workingDays,
+      'startTime': startTime,
+      'endTime': endTime,
+      'maxTokensPerDay': maxTokensPerDay,
     };
   }
 
@@ -68,6 +105,14 @@ class DoctorModel extends DoctorEntity {
       isAvailable: entity.isAvailable,
       about: entity.about,
       location: entity.location,
+      clinicId: entity.clinicId,
+      qualification: entity.qualification,
+      experience: entity.experience,
+      workingDays: entity.workingDays,
+      startTime: entity.startTime,
+      endTime: entity.endTime,
+      maxTokensPerDay: entity.maxTokensPerDay,
     );
   }
 }
+

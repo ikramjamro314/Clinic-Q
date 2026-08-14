@@ -62,7 +62,7 @@ class HomeState {
   const HomeState({
     this.isLoading = false,
     this.errorMessage,
-    this.userName = 'John',
+    this.userName = '',
     this.bannerData,
     this.doctors = const [],
     this.clinics = const [],

@@ -2,16 +2,16 @@ import 'package:clinic_q/features/doctor/domain/entities/specialty_entity.dart';
 
 import '../../domain/entities/doctor_entity.dart';
 import '../../domain/repositories/doctor_repository.dart';
-import '../services/supabase_doctor_service.dart';
+import '../services/doctor_api_service.dart';
 
 class DoctorRepositoryImpl implements DoctorRepository {
-  final SupabaseDoctorService _supabaseService;
+  final DoctorApiService _apiService;
 
-  DoctorRepositoryImpl(this._supabaseService);
+  DoctorRepositoryImpl(this._apiService);
 
   @override
   Future<List<DoctorEntity>> getInterestedDoctors() async {
-    return await _supabaseService.getInterestedDoctors();
+    return await _apiService.getInterestedDoctors();
   }
 
   @override
@@ -19,21 +19,28 @@ class DoctorRepositoryImpl implements DoctorRepository {
     String? query,
     Map<String, dynamic>? filters,
   }) async {
-    return await _supabaseService.getAllDoctors(query: query, filters: filters);
+    final specialization = filters?['specialization'] as String? ?? filters?['specialty'] as String?;
+    final clinicId = filters?['clinicId'] as String? ?? filters?['clinic_id'] as String?;
+    return await _apiService.getAllDoctors(
+      clinicId: clinicId,
+      specialization: specialization,
+      search: query,
+    );
   }
 
   @override
   Future<DoctorEntity?> getDoctorById(String id) async {
-    return await _supabaseService.getDoctorById(id);
+    return await _apiService.getDoctorById(id);
   }
 
   @override
   Future<List<SpecialtyEntity>> getSpecialties() async {
-    return await _supabaseService.getSpecialties();
+    return await _apiService.getSpecialties();
   }
 
   @override
   Future<List<DoctorEntity>> getDoctorsByClinic(String clinicId) async {
-    return await _supabaseService.getDoctorsByClinic(clinicId);
+    return await _apiService.getDoctorsByClinic(clinicId);
   }
 }
+
