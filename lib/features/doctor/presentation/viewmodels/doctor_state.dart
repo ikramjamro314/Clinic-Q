@@ -9,6 +9,7 @@ class DoctorState {
   final List<DoctorEntity> allDoctors;
   final String searchQuery;
   final Map<String, dynamic> filters;
+  final bool isFromCache;
 
   const DoctorState({
     this.isLoading = false,
@@ -17,6 +18,7 @@ class DoctorState {
     this.allDoctors = const [],
     this.searchQuery = '',
     this.filters = const {},
+    this.isFromCache = false,
   });
 
   DoctorState copyWith({
@@ -26,6 +28,7 @@ class DoctorState {
     List<DoctorEntity>? allDoctors,
     String? searchQuery,
     Map<String, dynamic>? filters,
+    bool? isFromCache,
   }) {
     return DoctorState(
       isLoading: isLoading ?? this.isLoading,
@@ -34,6 +37,7 @@ class DoctorState {
       allDoctors: allDoctors ?? this.allDoctors,
       searchQuery: searchQuery ?? this.searchQuery,
       filters: filters ?? this.filters,
+      isFromCache: isFromCache ?? this.isFromCache,
     );
   }
   
@@ -45,6 +49,7 @@ class DoctorState {
       allDoctors: allDoctors,
       searchQuery: searchQuery,
       filters: filters,
+      isFromCache: isFromCache,
     );
   }
 }

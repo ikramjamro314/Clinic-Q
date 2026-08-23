@@ -88,7 +88,9 @@ class SelectDoctorScreen extends ConsumerWidget {
             child: ElevatedButton(
               onPressed: selectState.selectedDoctorId != null
                   ? () {
-                      // TODO: Proceed to booking flow
+                      context.push(
+                        '/booking/token-info?doctorId=${selectState.selectedDoctorId}&clinicId=$clinicId',
+                      );
                     }
                   : null,
               style: ElevatedButton.styleFrom(

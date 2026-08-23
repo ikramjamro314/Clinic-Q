@@ -50,6 +50,10 @@ dependencies:
   supabase_flutter: ^2.16.0
   curved_navigation_bar: ^1.0.3
   dio: ^5.11.0
+  drift: ^2.34.3
+  sqlite3_flutter_libs: ^0.6.0+eol
+  shimmer: ^3.0.0
+  socket_io_client: ^3.0.2
 
 dev_dependencies:
   flutter_test:
@@ -61,6 +65,8 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^6.0.0
+  drift_dev: ^2.34.0
+  build_runner: ^2.15.1
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

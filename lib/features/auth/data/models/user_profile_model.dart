@@ -11,6 +11,8 @@ class UserProfileModel extends UserProfile {
     super.clinicId,
     super.createdAt,
     super.updatedAt,
+    super.gender,
+    super.dateOfBirth,
   });
 
   factory UserProfileModel.fromJson(Map<String, dynamic> json) {
@@ -24,6 +26,8 @@ class UserProfileModel extends UserProfile {
       clinicId: json['clinicId'] as String?,
       createdAt: json['createdAt'] as String?,
       updatedAt: json['updatedAt'] as String?,
+      gender: json['gender'] as String?,
+      dateOfBirth: json['dateOfBirth'] as String?,
     );
   }
 
@@ -38,6 +42,8 @@ class UserProfileModel extends UserProfile {
       'clinicId': clinicId,
       'createdAt': createdAt,
       'updatedAt': updatedAt,
+      'gender': gender,
+      'dateOfBirth': dateOfBirth,
     };
   }
 }

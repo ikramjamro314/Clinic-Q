@@ -14,13 +14,14 @@ abstract class AuthRepository {
   /// Fetch the current user's profile details.
   Future<UserProfile> getProfile();
 
-  /// Update user profile.
-  Future<void> updateProfile({
-    required String firstName,
-    required String lastName,
+  /// Create user profile.
+  Future<void> createOrUpdateProfile({
+    required String name,
+    required String phone,
     required String gender,
-    required String dateOfBirth,
+    required String dob,
     required String email,
+    required String userId,
   });
 
   /// Returns the current user entity, or null if not authenticated.

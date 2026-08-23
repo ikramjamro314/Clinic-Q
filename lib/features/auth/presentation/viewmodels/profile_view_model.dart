@@ -98,21 +98,17 @@ class ProfileNotifier extends Notifier<ProfileState> {
     );
 
     try {
-      final nameParts = state.name.trim().split(' ');
-      final firstName = nameParts.first;
-      final lastName = nameParts.length > 1
-          ? nameParts.sublist(1).join(' ')
-          : '';
-
       final authRepository = ref.read(authRepositoryProvider);
-      await authRepository.updateProfile(
-        firstName: firstName,
-        lastName: lastName,
+      await authRepository.createOrUpdateProfile(
+        name: state.name,
+        phone: state.phone.trim(),
         gender: state.gender,
-        dateOfBirth: state.dateOfBirth,
+        dob: state.dateOfBirth,
         email: state.email.trim(),
+        userId: ref.read(authRepositoryProvider).getCurrentUser()!.id,
       );
 
+      ref.read(hasProfileProvider.notifier).state = true;
       state = state.copyWith(isSuccess: true);
       return true;
     } catch (e) {

@@ -7,14 +7,14 @@ import '../../../../core/widgets/layout/clinicq_card.dart';
 import '../../../../core/widgets/inputs/clinicq_text_field.dart';
 import '../auth_providers.dart';
 
-class ProfileScreen extends ConsumerStatefulWidget {
-  const ProfileScreen({key}) : super(key: key);
+class ProfileDetailsScreen extends ConsumerStatefulWidget {
+  const ProfileDetailsScreen({key}) : super(key: key);
 
   @override
-  ConsumerState<ProfileScreen> createState() => _ProfileScreenState();
+  ConsumerState<ProfileDetailsScreen> createState() => _ProfileDetailsScreenState();
 }
 
-class _ProfileScreenState extends ConsumerState<ProfileScreen> {
+class _ProfileDetailsScreenState extends ConsumerState<ProfileDetailsScreen> {
   late TextEditingController _nameController;
   late TextEditingController _emailController;
   late TextEditingController _phoneController;
@@ -23,17 +23,17 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   @override
   void initState() {
     super.initState();
-    final state = ref.read(profileViewModelProvider);
+    final state = ref.read(authProfileSyncNotifierProvider);
     _nameController = TextEditingController(text: state.name);
     _emailController = TextEditingController(text: state.email);
     _phoneController = TextEditingController(text: state.phone);
     _dobController = TextEditingController(text: state.dateOfBirth);
 
     _nameController.addListener(() {
-      ref.read(profileViewModelProvider.notifier).updateName(_nameController.text);
+      ref.read(authProfileSyncNotifierProvider.notifier).updateName(_nameController.text);
     });
     _phoneController.addListener(() {
-      ref.read(profileViewModelProvider.notifier).updatePhone(_phoneController.text);
+      ref.read(authProfileSyncNotifierProvider.notifier).updatePhone(_phoneController.text);
     });
   }
 
@@ -71,12 +71,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     if (selectedDate != null) {
       final dobStr = "${selectedDate.year}-${selectedDate.month.toString().padLeft(2, '0')}-${selectedDate.day.toString().padLeft(2, '0')}";
       _dobController.text = dobStr;
-      ref.read(profileViewModelProvider.notifier).updateDateOfBirth(dobStr);
+      ref.read(authProfileSyncNotifierProvider.notifier).updateDateOfBirth(dobStr);
     }
   }
 
   Future<void> _handleSave() async {
-    final success = await ref.read(profileViewModelProvider.notifier).submitProfile();
+    final success = await ref.read(authProfileSyncNotifierProvider.notifier).submitProfile();
     if (!mounted) return;
 
     if (success) {
@@ -85,7 +85,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       );
       context.go(AppRoutes.home);
     } else {
-      final error = ref.read(profileViewModelProvider).errorMessage;
+      final error = ref.read(authProfileSyncNotifierProvider).errorMessage;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(error ?? 'Failed to save profile. Please try again.')),
       );
@@ -94,7 +94,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final state = ref.watch(profileViewModelProvider);
+    final state = ref.watch(authProfileSyncNotifierProvider);
     final theme = Theme.of(context);
 
     return Scaffold(
@@ -203,7 +203,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                     icon: Icons.male_rounded,
                                     isSelected: state.gender == 'Male',
                                     onTap: () {
-                                      ref.read(profileViewModelProvider.notifier).updateGender('Male');
+                                      ref.read(authProfileSyncNotifierProvider.notifier).updateGender('Male');
                                     },
                                   ),
                                 ),
@@ -214,7 +214,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                     icon: Icons.female_rounded,
                                     isSelected: state.gender == 'Female',
                                     onTap: () {
-                                      ref.read(profileViewModelProvider.notifier).updateGender('Female');
+                                      ref.read(authProfileSyncNotifierProvider.notifier).updateGender('Female');
                                     },
                                   ),
                                 ),

@@ -1,4 +1,4 @@
-import 'package:clinic_q/core/error/exceptions.dart';
+import 'package:clinic_q/core/error/auth_exceptions.dart';
 
 class ApiResponse {
   /// Validates the API response structure and extracts the `data` portion.
@@ -9,7 +9,8 @@ class ApiResponse {
       if (success) {
         return responseData['data'];
       } else {
-        final errorMessage = responseData['error'] as String? ?? 'API operation failed.';
+        final errorMessage =
+            responseData['error'] as String? ?? 'API operation failed.';
         throw NetworkException(errorMessage);
       }
     }

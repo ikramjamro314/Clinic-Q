@@ -4,9 +4,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/clinic_q_colors.dart';
 import '../../../../core/widgets/buttons/clinicq_button.dart';
+import '../../../../core/widgets/buttons/bookmark_button.dart';
+import '../../../../core/widgets/feedback/skeleton_box.dart';
+import '../../../../core/widgets/feedback/clinicq_error_widget.dart';
 import '../../../ratings/presentation/widgets/review_card.dart';
 import '../viewmodels/doctor_profile_view_model.dart';
 import '../widgets/doctor_profile_header.dart';
+import '../../../profile/data/local/interest_local_data_source.dart';
 
 class DoctorProfileScreen extends ConsumerWidget {
   final String doctorId;
@@ -19,9 +23,9 @@ class DoctorProfileScreen extends ConsumerWidget {
     final theme = Theme.of(context);
 
     return Scaffold(
-      backgroundColor: ClinicQColors.secondaryBackground,
+      backgroundColor: ClinicQColors.appBackground,
       appBar: AppBar(
-        backgroundColor: ClinicQColors.secondaryBackground,
+        backgroundColor: ClinicQColors.appBackground,
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: ClinicQColors.textPrimary),
@@ -34,28 +38,58 @@ class DoctorProfileScreen extends ConsumerWidget {
               color: Colors.white,
               borderRadius: BorderRadius.circular(12),
             ),
-            child: IconButton(
-              icon: const Icon(
-                Icons.bookmark_border,
-                color: ClinicQColors.textPrimary,
-              ),
-              onPressed: () {
-                // TODO: Handle bookmarking
-              },
+            child: BookmarkButton(
+              entityId: doctorId,
+              entityType: 'doctor',
             ),
           ),
         ],
       ),
       body: SafeArea(
         child: profileState.isLoading
-            ? const Center(
-                child: CircularProgressIndicator(
-                  color: ClinicQColors.primaryTeal,
+            ? Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 12.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        const SkeletonBox(width: 90, height: 90, borderRadius: 45),
+                        const SizedBox(width: 20),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const SkeletonBox(width: 160, height: 18),
+                              const SizedBox(height: 8),
+                              const SkeletonBox(width: 120, height: 12),
+                              const SizedBox(height: 8),
+                              const SkeletonBox(width: 80, height: 12),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 32),
+                    const SkeletonBox(width: 100, height: 16),
+                    const SizedBox(height: 12),
+                    const SkeletonBox(width: double.infinity, height: 100),
+                    const SizedBox(height: 32),
+                    const SkeletonBox(width: 120, height: 16),
+                    const SizedBox(height: 12),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: List.generate(3, (index) => const SkeletonBox(width: 90, height: 40)),
+                    ),
+                  ],
                 ),
               )
             : profileState.errorMessage != null || profileState.doctor == null
             ? Center(
-                child: Text(profileState.errorMessage ?? 'Doctor not found.'),
+                child: ClinicQErrorWidget(
+                  message: profileState.errorMessage ?? 'Doctor not found.',
+                  onRetry: () => ref.invalidate(doctorProfileViewModelProvider(doctorId)),
+                ),
               )
             : Column(
                 children: [
@@ -147,7 +181,10 @@ class DoctorProfileScreen extends ConsumerWidget {
                       label: 'Book an appointment',
                       gradient: ClinicQColors.gradientPrimary,
                       onPressed: () {
-                        // TODO: Navigate to booking flow
+                        final clinicId = profileState.doctor?.clinicId ?? '';
+                        context.push(
+                          '/booking/token-info?doctorId=$doctorId&clinicId=$clinicId',
+                        );
                       },
                     ),
                   ),

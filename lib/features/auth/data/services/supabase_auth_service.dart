@@ -3,7 +3,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:google_sign_in/google_sign_in.dart' as gsi;
 import 'package:supabase_flutter/supabase_flutter.dart' as sb;
 
-import '../../../../core/error/exceptions.dart';
+import '../../../../core/error/auth_exceptions.dart';
 
 class SupabaseAuthService {
   final sb.SupabaseClient _client;
@@ -41,6 +41,10 @@ class SupabaseAuthService {
           'Sign-in could not be completed. Please try again.',
         );
       }
+
+      final session = sb.Supabase.instance.client.auth.currentSession;
+
+      print("this is the session: ${session?.toJson()}");
       return user;
     } on sb.AuthException catch (e) {
       throw _mapSignInError(e);
@@ -67,7 +71,8 @@ class SupabaseAuthService {
       if (response.user != null && response.session == null) {
         return null;
       }
-
+      final session = sb.Supabase.instance.client.auth.currentSession;
+      print("this is the session: ${session?.toJson()}");
       return response.user;
     } on sb.AuthException catch (e) {
       throw _mapSignUpError(e);
@@ -152,6 +157,8 @@ class SupabaseAuthService {
         throw AuthException('Google sign-in could not be completed.');
       }
       debugPrint('>>> GOOGLE SIGN IN - success, user=${user.id}');
+      final session = sb.Supabase.instance.client.auth.currentSession;
+      print("this is the session: ${session?.toJson()}");
       return user;
     } on gsi.GoogleSignInException catch (e) {
       if (e.code == gsi.GoogleSignInExceptionCode.canceled) {

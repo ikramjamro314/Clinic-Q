@@ -2,6 +2,7 @@ import 'package:clinic_q/features/auth/presentation/auth_providers.dart';
 import 'package:clinic_q/features/clinic/presentation/clinic_providers.dart';
 import 'package:clinic_q/features/doctor/presentation/doctor_providers.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../core/error/exception_mapper.dart';
 import 'home_state.dart';
 
 class HomeNotifier extends Notifier<HomeState> {
@@ -16,14 +17,18 @@ class HomeNotifier extends Notifier<HomeState> {
     state = state.copyWith(isLoading: true, errorMessage: null);
 
     try {
+      bool isFromCache = false;
       String name = 'User';
       try {
         final profile = await ref.read(authRepositoryProvider).getProfile();
         if (profile.name.trim().isNotEmpty) {
           name = profile.name.trim().split(' ').first;
         }
+        if (profile.isFromCache) {
+          isFromCache = true;
+        }
       } catch (e) {
-        final profileState = ref.read(profileViewModelProvider);
+        final profileState = ref.read(authProfileSyncNotifierProvider);
         final currentUser = ref.read(authRepositoryProvider).getCurrentUser();
         if (profileState.name.trim().isNotEmpty) {
           name = profileState.name.trim().split(' ').first;
@@ -35,8 +40,33 @@ class HomeNotifier extends Notifier<HomeState> {
       }
 
       final banner = await fetchActiveAppointmentBanner();
-      final doctors = await fetchTopDoctors();
-      final clinics = await fetchTopClinics();
+      
+      final docRepo = ref.read(doctorRepositoryProvider);
+      final clinicRepo = ref.read(clinicRepositoryProvider);
+
+      final docEntities = await docRepo.getInterestedDoctors();
+      final clinicEntities = await clinicRepo.getAllClinics();
+
+      if (docEntities.any((d) => d.isFromCache) || clinicEntities.any((c) => c.isFromCache)) {
+        isFromCache = true;
+      }
+
+      final doctors = docEntities.map((doc) => DoctorItem(
+        id: doc.id,
+        name: doc.name,
+        specialty: doc.specialty,
+        rating: doc.rating,
+        avatarUrl: doc.photoUrl,
+        isAvailable: doc.isAvailable,
+      )).toList();
+
+      final clinics = clinicEntities.take(3).map((clinic) => ClinicItem(
+        id: clinic.id,
+        name: clinic.name,
+        address: clinic.address,
+        imageUrl: clinic.imageUrl,
+        rating: clinic.rating,
+      )).toList();
 
       state = state.copyWith(
         isLoading: false,
@@ -44,11 +74,13 @@ class HomeNotifier extends Notifier<HomeState> {
         bannerData: banner,
         doctors: doctors,
         clinics: clinics,
+        isFromCache: isFromCache,
       );
     } catch (e) {
+      final appEx = mapErrorToException(e);
       state = state.copyWith(
         isLoading: false,
-        errorMessage: 'Failed to load home content: $e',
+        errorMessage: appEx.message,
       );
     }
   }

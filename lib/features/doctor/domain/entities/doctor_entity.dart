@@ -25,6 +25,10 @@ class DoctorEntity {
   final String? endTime;
   final int? maxTokensPerDay;
 
+  // Cache-aside status fields
+  final bool isFromCache;
+  final String? cacheError;
+
   const DoctorEntity({
     required this.id,
     required this.name,
@@ -46,6 +50,8 @@ class DoctorEntity {
     this.startTime,
     this.endTime,
     this.maxTokensPerDay,
+    this.isFromCache = false,
+    this.cacheError,
   });
 
   DoctorEntity copyWith({
@@ -69,6 +75,8 @@ class DoctorEntity {
     String? startTime,
     String? endTime,
     int? maxTokensPerDay,
+    bool? isFromCache,
+    String? cacheError,
   }) {
     return DoctorEntity(
       id: id ?? this.id,
@@ -91,6 +99,8 @@ class DoctorEntity {
       startTime: startTime ?? this.startTime,
       endTime: endTime ?? this.endTime,
       maxTokensPerDay: maxTokensPerDay ?? this.maxTokensPerDay,
+      isFromCache: isFromCache ?? this.isFromCache,
+      cacheError: cacheError ?? this.cacheError,
     );
   }
 }

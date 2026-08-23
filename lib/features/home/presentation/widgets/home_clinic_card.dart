@@ -39,7 +39,18 @@ class HomeClinicCard extends StatelessWidget {
               child: clinic.imageUrl != null
                   ? ClipRRect(
                       borderRadius: BorderRadius.circular(12),
-                      child: Image.network(clinic.imageUrl!, fit: BoxFit.cover),
+                      child: Image.network(
+                        clinic.imageUrl!,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) => Container(
+                          color: ClinicQColors.quickActionBackground,
+                          child: const Icon(
+                            Icons.local_hospital_rounded,
+                            color: ClinicQColors.quickActionIcon,
+                            size: 32,
+                          ),
+                        ),
+                      ),
                     )
                   : const Icon(
                       Icons.local_hospital_rounded,

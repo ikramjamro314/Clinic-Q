@@ -7,9 +7,12 @@ import '../../../../app/app_routes.dart';
 import '../../../../core/theme/clinic_q_colors.dart';
 import '../../../../core/widgets/feedback/clinicq_loader.dart';
 import '../../../../core/widgets/feedback/clinicq_error_widget.dart';
+import '../../../../core/widgets/feedback/skeleton_box.dart';
+import '../../../../core/widgets/buttons/bookmark_button.dart';
 import '../clinic_providers.dart';
 import '../viewmodels/select_doctor_view_model.dart';
 import '../widgets/clinic_doctor_card.dart';
+import '../../../profile/data/local/interest_local_data_source.dart';
 
 class ClinicViewScreen extends ConsumerWidget {
   final String clinicId;
@@ -24,7 +27,34 @@ class ClinicViewScreen extends ConsumerWidget {
     return Scaffold(
       backgroundColor: ClinicQColors.appBackground,
       body: clinicAsync.when(
-        loading: () => const Center(child: ClinicQLoader()),
+        loading: () => SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SkeletonBox(width: double.infinity, height: 250, borderRadius: 0),
+              Padding(
+                padding: const EdgeInsets.all(20.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const SkeletonBox(width: 250, height: 24),
+                    const SizedBox(height: 12),
+                    const SkeletonBox(width: 150, height: 16),
+                    const SizedBox(height: 24),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: List.generate(3, (index) => const SkeletonBox(width: 90, height: 36)),
+                    ),
+                    const SizedBox(height: 28),
+                    const SkeletonBox(width: 100, height: 18),
+                    const SizedBox(height: 12),
+                    const SkeletonBox(width: double.infinity, height: 80),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
         error: (err, stack) => Center(
           child: ClinicQErrorWidget(
             message: err.toString(),
@@ -72,6 +102,22 @@ class ClinicViewScreen extends ConsumerWidget {
                   ),
                 ),
                 actions: [
+                  // Bookmark Button
+                  Padding(
+                    padding: const EdgeInsets.only(
+                      top: 8.0,
+                      bottom: 8.0,
+                    ),
+                    child: CircleAvatar(
+                      backgroundColor: Colors.white,
+                      child: BookmarkButton(
+                        entityId: clinicId,
+                        entityType: 'clinic',
+                        size: 20,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
                   Padding(
                     padding: const EdgeInsets.only(
                       right: 16.0,

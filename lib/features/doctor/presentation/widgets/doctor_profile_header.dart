@@ -25,6 +25,13 @@ class DoctorProfileHeader extends StatelessWidget {
                   width: 100,
                   height: 100,
                   fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) => Container(
+                    width: 100,
+                    height: 100,
+                    color: ClinicQColors.dividerLight,
+                    child: const Icon(Icons.person,
+                        color: ClinicQColors.iconSecondary, size: 40),
+                  ),
                 )
               : Container(
                   width: 100,

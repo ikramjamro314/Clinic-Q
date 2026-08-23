@@ -12,6 +12,9 @@ import 'viewmodels/otp_verification_view_model.dart';
 import 'viewmodels/profile_view_model.dart';
 import 'viewmodels/onboarding_view_model.dart';
 
+import '../../../core/local/app_database.dart';
+import '../data/local/profile_local_data_source.dart';
+
 final supabaseClientProvider = Provider<sb.SupabaseClient>((ref) {
   return sb.Supabase.instance.client;
 });
@@ -21,11 +24,16 @@ final supabaseAuthServiceProvider = Provider<SupabaseAuthService>((ref) {
   return SupabaseAuthService(client);
 });
 
+final profileLocalDataSourceProvider = Provider<ProfileLocalDataSource>((ref) {
+  final db = ref.watch(databaseProvider);
+  return ProfileLocalDataSource(db);
+});
 
 final authRepositoryProvider = Provider<AuthRepository>((ref) {
   final supabaseService = ref.watch(supabaseAuthServiceProvider);
   final dio = ref.watch(dioProvider);
-  return SupabaseAuthRepositoryImpl(supabaseService, dio);
+  final localDataSource = ref.watch(profileLocalDataSourceProvider);
+  return SupabaseAuthRepositoryImpl(supabaseService, dio, localDataSource);
 });
 
 final authStateChangesProvider = StreamProvider<sb.AuthState>((ref) {
@@ -46,10 +54,23 @@ final otpViewModelProvider =
       OtpVerificationNotifier.new,
     );
 
-final profileViewModelProvider =
+final authProfileSyncNotifierProvider =
     NotifierProvider<ProfileNotifier, ProfileState>(ProfileNotifier.new);
 
 final onboardingViewModelProvider =
     NotifierProvider<OnboardingNotifier, OnboardingState>(
       OnboardingNotifier.new,
     );
+
+class HasProfileNotifier extends Notifier<bool?> {
+  @override
+  bool? build() => null;
+
+  void setState(bool? value) {
+    state = value;
+  }
+}
+
+final hasProfileProvider = NotifierProvider<HasProfileNotifier, bool?>(
+  HasProfileNotifier.new,
+);

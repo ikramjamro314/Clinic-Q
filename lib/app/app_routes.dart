@@ -6,7 +6,13 @@ class AppRoutes {
   static const String walkInEntry = '/walk-in-entry';
   static const String login = '/login';
   static const String otpVerification = '/otp-verification';
+  static const String profileDetails = '/profile-details';
   static const String profile = '/profile';
+  static const String profileEdit = '/profile/edit';
+  static const String profileInterestList = '/profile/interest-list';
+  static const String profileTermsAndPolicy = '/profile/terms-and-policy';
+  static const String profilePrivacyPolicy = '/profile/privacy-policy';
+  static const String profileFAQ = '/profile/faq';
   static const String home = '/home';
   static const String clinics = '/clinics';
   static const String doctors = '/doctors';
@@ -16,6 +22,11 @@ class AppRoutes {
   static const String allReviews = '/reviews/:id';
   static const String clinicView = '/clinics/:id';
   static const String selectDoctor = '/clinics/:id/select-doctor';
+  static const String trackingDebug = '/tracking-debug';
+  static const String bookingTokenInfo = '/booking/token-info';
+  static const String bookingConfirm = '/booking/confirm';
+  static const String bookingSuccess = '/booking/success';
+  static const String tracking = '/tracking/:id';
 
   static String otpVerificationWithParams({required String email}) {
     final queryParams = <String, String>{'email': email};

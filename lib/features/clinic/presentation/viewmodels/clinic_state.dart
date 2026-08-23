@@ -9,6 +9,7 @@ class ClinicState {
   final String searchQuery;
   final String? city;
   final String? specialty;
+  final bool isFromCache;
 
   const ClinicState({
     this.isLoading = false,
@@ -17,6 +18,7 @@ class ClinicState {
     this.searchQuery = '',
     this.city,
     this.specialty,
+    this.isFromCache = false,
   });
 
   ClinicState copyWith({
@@ -26,6 +28,7 @@ class ClinicState {
     String? searchQuery,
     String? city,
     String? specialty,
+    bool? isFromCache,
   }) {
     return ClinicState(
       isLoading: isLoading ?? this.isLoading,
@@ -34,6 +37,7 @@ class ClinicState {
       searchQuery: searchQuery ?? this.searchQuery,
       city: city ?? this.city,
       specialty: specialty ?? this.specialty,
+      isFromCache: isFromCache ?? this.isFromCache,
     );
   }
 
@@ -45,6 +49,7 @@ class ClinicState {
       searchQuery: searchQuery,
       city: city,
       specialty: specialty,
+      isFromCache: isFromCache,
     );
   }
 }

@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../core/error/exception_mapper.dart';
 import '../clinic_providers.dart';
 import 'clinic_state.dart';
 
@@ -22,12 +23,20 @@ class ClinicNotifier extends Notifier<ClinicState> {
         search: state.searchQuery,
       );
 
+      final hasCache = all.isNotEmpty && all.any((e) => e.isFromCache);
       state = state.copyWith(
         isLoading: false,
         clinics: all,
+        isFromCache: hasCache,
+        errorMessage: hasCache ? all.firstWhere((e) => e.isFromCache).cacheError : null,
       );
     } catch (e) {
-      state = state.copyWith(isLoading: false, errorMessage: 'Failed to load clinics: $e');
+      final appEx = mapErrorToException(e);
+      state = state.copyWith(
+        isLoading: false,
+        errorMessage: appEx.message,
+        isFromCache: false,
+      );
     }
   }
 
@@ -43,12 +52,20 @@ class ClinicNotifier extends Notifier<ClinicState> {
         search: query,
       );
 
+      final hasCache = all.isNotEmpty && all.any((e) => e.isFromCache);
       state = state.copyWith(
         isLoading: false,
         clinics: all,
+        isFromCache: hasCache,
+        errorMessage: hasCache ? all.firstWhere((e) => e.isFromCache).cacheError : null,
       );
     } catch (e) {
-      state = state.copyWith(isLoading: false, errorMessage: 'Search failed: $e');
+      final appEx = mapErrorToException(e);
+      state = state.copyWith(
+        isLoading: false,
+        errorMessage: appEx.message,
+        isFromCache: false,
+      );
     }
   }
 
@@ -68,12 +85,20 @@ class ClinicNotifier extends Notifier<ClinicState> {
         search: state.searchQuery,
       );
 
+      final hasCache = all.isNotEmpty && all.any((e) => e.isFromCache);
       state = state.copyWith(
         isLoading: false,
         clinics: all,
+        isFromCache: hasCache,
+        errorMessage: hasCache ? all.firstWhere((e) => e.isFromCache).cacheError : null,
       );
     } catch (e) {
-      state = state.copyWith(isLoading: false, errorMessage: 'Failed to filter clinics: $e');
+      final appEx = mapErrorToException(e);
+      state = state.copyWith(
+        isLoading: false,
+        errorMessage: appEx.message,
+        isFromCache: false,
+      );
     }
   }
 

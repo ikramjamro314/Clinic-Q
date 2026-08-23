@@ -36,6 +36,10 @@ class ClinicEntity {
   final String? createdAt;
   final String? updatedAt;
 
+  // Cache-aside status fields
+  final bool isFromCache;
+  final String? cacheError;
+
   const ClinicEntity({
     required this.id,
     required this.name,
@@ -68,6 +72,8 @@ class ClinicEntity {
     this.emergencyServices = false,
     this.createdAt,
     this.updatedAt,
+    this.isFromCache = false,
+    this.cacheError,
   });
 
   ClinicEntity copyWith({
@@ -102,6 +108,8 @@ class ClinicEntity {
     bool? emergencyServices,
     String? createdAt,
     String? updatedAt,
+    bool? isFromCache,
+    String? cacheError,
   }) {
     return ClinicEntity(
       id: id ?? this.id,
@@ -135,6 +143,8 @@ class ClinicEntity {
       emergencyServices: emergencyServices ?? this.emergencyServices,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      isFromCache: isFromCache ?? this.isFromCache,
+      cacheError: cacheError ?? this.cacheError,
     );
   }
 }

@@ -48,6 +48,16 @@ class HomeDoctorCard extends StatelessWidget {
                           width: double.infinity,
                           height: 85,
                           fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) => Container(
+                            width: double.infinity,
+                            height: 85,
+                            color: ClinicQColors.quickActionBackground,
+                            child: const Icon(
+                              Icons.person,
+                              color: ClinicQColors.primaryTeal,
+                              size: 36,
+                            ),
+                          ),
                         )
                       : Container(
                           width: double.infinity,

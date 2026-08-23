@@ -9,8 +9,11 @@ import '../../../../core/widgets/feedback/clinicq_loader.dart';
 import '../../../../core/widgets/feedback/clinicq_error_widget.dart';
 import '../../../home/presentation/widgets/home_bottom_nav_bar.dart';
 import '../../../home/presentation/widgets/home_section_header.dart';
+import '../../../../core/widgets/feedback/offline_banner.dart';
 import '../clinic_providers.dart';
 import '../widgets/clinic_list_card.dart';
+
+import '../widgets/clinic_card_skeleton.dart';
 
 class ClinicScreen extends ConsumerStatefulWidget {
   const ClinicScreen({super.key});
@@ -48,78 +51,88 @@ class _ClinicScreenState extends ConsumerState<ClinicScreen> {
           ),
         ),
       ),
-      body: clinicState.isLoading && clinicState.clinics.isEmpty
-          ? const Center(child: ClinicQLoader())
-          : clinicState.errorMessage != null && clinicState.clinics.isEmpty
-          ? Center(
-              child: ClinicQErrorWidget(
-                message: clinicState.errorMessage!,
-                onRetry: () => clinicNotifier.refresh(),
-              ),
-            )
-          : SafeArea(
-              child: RefreshIndicator(
-                onRefresh: () async => clinicNotifier.refresh(),
-                color: ClinicQColors.primaryTeal,
-                child: SingleChildScrollView(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 20.0,
-                    vertical: 12.0,
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Search field
-                      ClinicQTextField(
-                        controller: _searchController,
-                        hintText: 'Search',
-                        prefixIcon: Icons.search_rounded,
-                        isPill: false,
-                        borderRadius: 16,
-                        fillColor: Colors.white,
-                        onChanged: clinicNotifier.searchClinics,
-                        onSuffixIconPressed: () {
-                          _searchController.clear();
-                          clinicNotifier.searchClinics('');
-                        },
-                        suffixIcon: _searchController.text.isNotEmpty
-                            ? Icons.close_rounded
-                            : null,
-                      ),
+      body: Column(
+        children: [
+          if (clinicState.isFromCache)
+            OfflineBanner(message: clinicState.errorMessage),
+          Expanded(
+            child: clinicState.isLoading && clinicState.clinics.isEmpty
+                ? Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20.0,
+                      vertical: 12.0,
+                    ),
+                    child: ListView.builder(
+                      itemCount: 3,
+                      itemBuilder: (context, index) => const ClinicCardSkeleton(),
+                    ),
+                  )
+                : clinicState.errorMessage != null && clinicState.clinics.isEmpty
+                    ? Center(
+                        child: ClinicQErrorWidget(
+                          message: clinicState.errorMessage!,
+                          onRetry: () => clinicNotifier.refresh(),
+                        ),
+                      )
+                    : SafeArea(
+                        child: RefreshIndicator(
+                          onRefresh: () async => clinicNotifier.refresh(),
+                          color: ClinicQColors.primaryTeal,
+                          child: SingleChildScrollView(
+                            physics: const AlwaysScrollableScrollPhysics(),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 20.0,
+                              vertical: 12.0,
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                // Search field
+                                ClinicQTextField(
+                                  controller: _searchController,
+                                  hintText: 'Search',
+                                  prefixIcon: Icons.search_rounded,
+                                  isPill: false,
+                                  borderRadius: 16,
+                                  fillColor: Colors.white,
+                                  onChanged: clinicNotifier.searchClinics,
+                                  onSuffixIconPressed: () {
+                                    _searchController.clear();
+                                    clinicNotifier.searchClinics('');
+                                  },
+                                  suffixIcon: _searchController.text.isNotEmpty
+                                      ? Icons.close_rounded
+                                      : null,
+                                ),
 
-                      const SizedBox(height: 24),
+                                const SizedBox(height: 24),
 
-                      // All Hospitals Section
-                      const HomeSectionHeader(
-                        title: 'All Clinics',
-                        showAction: false,
+                                // Main clinics list
+                                ListView.builder(
+                                  shrinkWrap: true,
+                                  physics: const NeverScrollableScrollPhysics(),
+                                  itemCount: clinicState.clinics.length,
+                                  itemBuilder: (context, index) {
+                                    final clinic = clinicState.clinics[index];
+                                    return ClinicListCard(
+                                      clinic: clinic,
+                                      onTap: () {
+                                        context.push(
+                                          AppRoutes.clinicViewWithId(clinicId: clinic.id),
+                                        );
+                                      },
+                                    );
+                                  },
+                                ),
+                                const SizedBox(height: 20),
+                              ],
+                            ),
+                          ),
+                        ),
                       ),
-                      const SizedBox(height: 14),
-                      ListView.separated(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        itemCount: clinicState.clinics.length,
-                        separatorBuilder: (context, index) =>
-                            const SizedBox(height: 16),
-                        itemBuilder: (context, index) {
-                          final clinic = clinicState.clinics[index];
-                          return ClinicListCard(
-                            clinic: clinic,
-                            onTap: () {
-                              context.push(
-                                AppRoutes.clinicViewWithId(clinicId: clinic.id),
-                              );
-                            },
-                          );
-                        },
-                      ),
-                      const SizedBox(height: 20),
-                    ],
-                  ),
-                ),
-              ),
-            ),
+          ),
+        ],
+      ),
       bottomNavigationBar: HomeBottomNavBar(
         currentIndex: 0, // 0 is Clinics tab
         onTap: (index) {
@@ -127,8 +140,9 @@ class _ClinicScreenState extends ConsumerState<ClinicScreen> {
             context.go(AppRoutes.home);
           } else if (index == 1) {
             context.go(AppRoutes.doctors);
+          } else if (index == 4) {
+            context.go(AppRoutes.profile);
           }
-          // TODO: handle other routes later
         },
       ),
     );

@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../core/error/exception_mapper.dart';
 import '../doctor_providers.dart';
 import 'doctor_profile_state.dart';
 import '../../../ratings/presentation/ratings_providers.dart';
@@ -41,9 +42,10 @@ class DoctorProfileViewModel extends Notifier<DoctorProfileState> {
         topReviews: reviews.take(2).toList(),
       );
     } catch (e) {
+      final appEx = mapErrorToException(e);
       state = state.copyWith(
         isLoading: false,
-        errorMessage: 'Failed to load doctor profile: $e',
+        errorMessage: appEx.message,
       );
     }
   }

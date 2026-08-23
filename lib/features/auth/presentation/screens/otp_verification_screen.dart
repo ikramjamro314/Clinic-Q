@@ -157,7 +157,7 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
       if (hasProfile) {
         context.go(AppRoutes.home);
       } else {
-        context.go(AppRoutes.profile);
+        context.go(AppRoutes.profileDetails);
       }
     } else {
       final error = ref.read(otpViewModelProvider).errorMessage;

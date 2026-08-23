@@ -12,6 +12,14 @@ import 'viewmodels/doctor_view_model.dart';
 import '../../../core/network/dio_client.dart';
 import '../data/services/doctor_api_service.dart';
 
+import '../../../core/local/app_database.dart';
+import '../data/local/doctor_local_data_source.dart';
+
+final doctorLocalDataSourceProvider = Provider<DoctorLocalDataSource>((ref) {
+  final db = ref.watch(databaseProvider);
+  return DoctorLocalDataSource(db);
+});
+
 final doctorApiServiceProvider = Provider<DoctorApiService>((ref) {
   final dio = ref.watch(dioProvider);
   return DoctorApiService(dio);
@@ -19,7 +27,8 @@ final doctorApiServiceProvider = Provider<DoctorApiService>((ref) {
 
 final doctorRepositoryProvider = Provider<DoctorRepository>((ref) {
   final service = ref.watch(doctorApiServiceProvider);
-  return DoctorRepositoryImpl(service);
+  final localDataSource = ref.watch(doctorLocalDataSourceProvider);
+  return DoctorRepositoryImpl(service, localDataSource);
 });
 
 final doctorViewModelProvider = NotifierProvider<DoctorNotifier, DoctorState>(

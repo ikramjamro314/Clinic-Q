@@ -1,4 +1,8 @@
 import 'package:clinic_q/features/ratings/presentation/screens/all_reviews_screen.dart';
+import 'package:clinic_q/features/tracking/presentation/screens/tracking_screen.dart';
+import 'package:clinic_q/features/tracking/presentation/screens/token_info_screen.dart';
+import 'package:clinic_q/features/tracking/presentation/screens/confirm_booking_screen.dart';
+import 'package:clinic_q/features/tracking/presentation/screens/booking_success_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -10,7 +14,13 @@ import '../features/auth/presentation/screens/clinic_marketing_screen.dart';
 import '../features/auth/presentation/screens/role_selection_screen.dart';
 import '../features/auth/presentation/screens/login_screen.dart';
 import '../features/auth/presentation/screens/otp_verification_screen.dart';
-import '../features/auth/presentation/screens/profile_screen.dart';
+import '../features/auth/presentation/screens/profile_details_screen.dart';
+import '../features/profile/presentation/screens/profile_screen.dart';
+import '../features/profile/presentation/screens/edit_profile_screen.dart';
+import '../features/profile/presentation/screens/interest_list_screen.dart';
+import '../features/profile/presentation/screens/terms_and_policy_screen.dart';
+import '../features/profile/presentation/screens/privacy_policy_screen.dart';
+import '../features/profile/presentation/screens/faq_screen.dart';
 import '../features/home/presentation/screens/home_screen.dart';
 import '../features/clinic/presentation/screens/clinic_screen.dart';
 import '../features/clinic/presentation/screens/clinic_view_screen.dart';
@@ -18,7 +28,6 @@ import '../features/clinic/presentation/screens/select_doctor_screen.dart';
 import '../features/doctor/presentation/screens/doctor_screen.dart';
 import '../features/doctor/presentation/screens/filter_screen.dart';
 import '../features/doctor/presentation/screens/doctor_profile_screen.dart';
-import '../features/queue_tracking/presentation/screens/walk_in_entry_screen.dart';
 import '../core/widgets/custom_transition_page.dart';
 import 'app_routes.dart';
 
@@ -27,6 +36,7 @@ final initialLocationProvider = Provider<String>((ref) => AppRoutes.splash);
 final routerProvider = Provider<GoRouter>((ref) {
   final authRepository = ref.watch(authRepositoryProvider);
   final initialLocation = ref.watch(initialLocationProvider);
+  final hasProfile = ref.watch(hasProfileProvider);
 
   return GoRouter(
     initialLocation: initialLocation,
@@ -59,6 +69,15 @@ final routerProvider = Provider<GoRouter>((ref) {
       if (isAuthRoute) {
         return AppRoutes.home;
       }
+
+      // Redirect for Profile routes when profile does not exist
+      final isProfileRoute =
+          state.matchedLocation.startsWith('/profile') &&
+          state.matchedLocation != AppRoutes.profileDetails;
+      if (isProfileRoute && hasProfile == false) {
+        return AppRoutes.profileDetails;
+      }
+
       return null;
     },
     routes: [
@@ -102,7 +121,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: AppRoutes.walkInEntry,
         pageBuilder: (context, state) => buildPageWithTransition(
           state: state,
-          child: const WalkInIdEntryScreen(),
+          child: const LoginScreen(),
           transitionType: AppTransitionType.slideLeft,
         ),
       ),
@@ -117,9 +136,56 @@ final routerProvider = Provider<GoRouter>((ref) {
         },
       ),
       GoRoute(
+        path: AppRoutes.profileDetails,
+        pageBuilder: (context, state) => buildPageWithTransition(
+          state: state,
+          child: const ProfileDetailsScreen(),
+        ),
+      ),
+      GoRoute(
         path: AppRoutes.profile,
         pageBuilder: (context, state) =>
             buildPageWithTransition(state: state, child: const ProfileScreen()),
+      ),
+      GoRoute(
+        path: AppRoutes.profileEdit,
+        pageBuilder: (context, state) => buildPageWithTransition(
+          state: state,
+          child: const EditProfileScreen(),
+          transitionType: AppTransitionType.slideLeft,
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.profileInterestList,
+        pageBuilder: (context, state) => buildPageWithTransition(
+          state: state,
+          child: const InterestListScreen(),
+          transitionType: AppTransitionType.slideLeft,
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.profileTermsAndPolicy,
+        pageBuilder: (context, state) => buildPageWithTransition(
+          state: state,
+          child: const TermsAndPolicyScreen(),
+          transitionType: AppTransitionType.slideLeft,
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.profilePrivacyPolicy,
+        pageBuilder: (context, state) => buildPageWithTransition(
+          state: state,
+          child: const PrivacyPolicyScreen(),
+          transitionType: AppTransitionType.slideLeft,
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.profileFAQ,
+        pageBuilder: (context, state) => buildPageWithTransition(
+          state: state,
+          child: const FAQScreen(),
+          transitionType: AppTransitionType.slideLeft,
+        ),
       ),
       GoRoute(
         path: AppRoutes.home,
@@ -190,6 +256,75 @@ final routerProvider = Provider<GoRouter>((ref) {
           return buildPageWithTransition(
             state: state,
             child: SelectDoctorScreen(clinicId: id),
+            transitionType: AppTransitionType.slideLeft,
+          );
+        },
+      ),
+      GoRoute(
+        path: AppRoutes.trackingDebug,
+        pageBuilder: (context, state) => buildPageWithTransition(
+          state: state,
+          child: const TrackingScreen(),
+          transitionType: AppTransitionType.fade,
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.tracking,
+        pageBuilder: (context, state) {
+          final id = state.pathParameters['id'] ?? '';
+          return buildPageWithTransition(
+            state: state,
+            child: TrackingScreen(tokenId: id),
+            transitionType: AppTransitionType.slideLeft,
+          );
+        },
+      ),
+      GoRoute(
+        path: AppRoutes.bookingTokenInfo,
+        pageBuilder: (context, state) {
+          final doctorId = state.uri.queryParameters['doctorId'] ?? '';
+          final clinicId = state.uri.queryParameters['clinicId'] ?? '';
+          return buildPageWithTransition(
+            state: state,
+            child: TokenInfoScreen(doctorId: doctorId, clinicId: clinicId),
+            transitionType: AppTransitionType.slideLeft,
+          );
+        },
+      ),
+      GoRoute(
+        path: AppRoutes.bookingConfirm,
+        pageBuilder: (context, state) {
+          final doctorId = state.uri.queryParameters['doctorId'] ?? '';
+          final clinicId = state.uri.queryParameters['clinicId'] ?? '';
+          final extra = state.extra as TokenInfoData?;
+          return buildPageWithTransition(
+            state: state,
+            child: ConfirmBookingScreen(
+              doctorId: doctorId,
+              clinicId: clinicId,
+              initialData: extra,
+            ),
+            transitionType: AppTransitionType.slideLeft,
+          );
+        },
+      ),
+      GoRoute(
+        path: AppRoutes.bookingSuccess,
+        pageBuilder: (context, state) {
+          final extra = state.extra as BookingSuccessParams?;
+          if (extra == null) {
+            return buildPageWithTransition(
+              state: state,
+              child: const Scaffold(body: Center(child: Text('Invalid State'))),
+            );
+          }
+          return buildPageWithTransition(
+            state: state,
+            child: BookingSuccessScreen(
+              doctor: extra.doctor,
+              preview: extra.preview,
+              token: extra.token,
+            ),
             transitionType: AppTransitionType.slideLeft,
           );
         },

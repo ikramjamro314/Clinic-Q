@@ -58,6 +58,7 @@ class HomeState {
   final List<DoctorItem> doctors;
   final List<ClinicItem> clinics;
   final int selectedNavIndex;
+  final bool isFromCache;
 
   const HomeState({
     this.isLoading = false,
@@ -67,6 +68,7 @@ class HomeState {
     this.doctors = const [],
     this.clinics = const [],
     this.selectedNavIndex = 2, // 2 is Home tab
+    this.isFromCache = false,
   });
 
   HomeState copyWith({
@@ -77,6 +79,7 @@ class HomeState {
     List<DoctorItem>? doctors,
     List<ClinicItem>? clinics,
     int? selectedNavIndex,
+    bool? isFromCache,
   }) {
     return HomeState(
       isLoading: isLoading ?? this.isLoading,
@@ -86,6 +89,7 @@ class HomeState {
       doctors: doctors ?? this.doctors,
       clinics: clinics ?? this.clinics,
       selectedNavIndex: selectedNavIndex ?? this.selectedNavIndex,
+      isFromCache: isFromCache ?? this.isFromCache,
     );
   }
 }

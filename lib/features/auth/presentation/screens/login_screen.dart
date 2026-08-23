@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../app/app_routes.dart';
-import '../../../../core/error/exceptions.dart';
+import '../../../../core/error/auth_exceptions.dart';
 import '../widgets/login_signup/auth_header.dart';
 import '../widgets/login_signup/auth_tab_toggle.dart';
 import '../widgets/login_signup/or_divider.dart';

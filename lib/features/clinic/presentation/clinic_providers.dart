@@ -11,6 +11,14 @@ import 'viewmodels/clinic_view_model.dart';
 import '../../../core/network/dio_client.dart';
 import '../data/services/clinic_api_service.dart';
 
+import '../../../core/local/app_database.dart';
+import '../data/local/clinic_local_data_source.dart';
+
+final clinicLocalDataSourceProvider = Provider<ClinicLocalDataSource>((ref) {
+  final db = ref.watch(databaseProvider);
+  return ClinicLocalDataSource(db);
+});
+
 final clinicApiServiceProvider = Provider<ClinicApiService>((ref) {
   final dio = ref.watch(dioProvider);
   return ClinicApiService(dio);
@@ -18,7 +26,8 @@ final clinicApiServiceProvider = Provider<ClinicApiService>((ref) {
 
 final clinicRepositoryProvider = Provider<ClinicRepository>((ref) {
   final service = ref.watch(clinicApiServiceProvider);
-  return ClinicRepositoryImpl(service);
+  final localDataSource = ref.watch(clinicLocalDataSourceProvider);
+  return ClinicRepositoryImpl(service, localDataSource);
 });
 
 final clinicViewModelProvider = NotifierProvider<ClinicNotifier, ClinicState>(

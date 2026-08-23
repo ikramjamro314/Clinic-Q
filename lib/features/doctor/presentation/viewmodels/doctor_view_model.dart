@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../core/error/exception_mapper.dart';
 import '../doctor_providers.dart';
 import 'doctor_state.dart';
 
@@ -19,13 +20,28 @@ class DoctorNotifier extends Notifier<DoctorState> {
       final interested = await repository.getInterestedDoctors();
       final all = await repository.getAllDoctors();
 
+      final hasCache = (interested.isNotEmpty && interested.any((e) => e.isFromCache)) ||
+          (all.isNotEmpty && all.any((e) => e.isFromCache));
+      final cacheErr = interested.isNotEmpty && interested.any((e) => e.isFromCache)
+          ? interested.firstWhere((e) => e.isFromCache).cacheError
+          : (all.isNotEmpty && all.any((e) => e.isFromCache)
+              ? all.firstWhere((e) => e.isFromCache).cacheError
+              : null);
+
       state = state.copyWith(
         isLoading: false,
         interestedDoctors: interested,
         allDoctors: all,
+        isFromCache: hasCache,
+        errorMessage: cacheErr,
       );
     } catch (e) {
-      state = state.copyWith(isLoading: false, errorMessage: 'Failed to load doctors: $e');
+      final appEx = mapErrorToException(e);
+      state = state.copyWith(
+        isLoading: false,
+        errorMessage: appEx.message,
+        isFromCache: false,
+      );
     }
   }
 
@@ -37,12 +53,20 @@ class DoctorNotifier extends Notifier<DoctorState> {
       
       final all = await repository.getAllDoctors(query: query, filters: state.filters);
 
+      final hasCache = all.isNotEmpty && all.any((e) => e.isFromCache);
       state = state.copyWith(
         isLoading: false,
         allDoctors: all,
+        isFromCache: hasCache,
+        errorMessage: hasCache ? all.firstWhere((e) => e.isFromCache).cacheError : null,
       );
     } catch (e) {
-      state = state.copyWith(isLoading: false, errorMessage: 'Search failed: $e');
+      final appEx = mapErrorToException(e);
+      state = state.copyWith(
+        isLoading: false,
+        errorMessage: appEx.message,
+        isFromCache: false,
+      );
     }
   }
 
@@ -54,12 +78,20 @@ class DoctorNotifier extends Notifier<DoctorState> {
       
       final all = await repository.getAllDoctors(query: state.searchQuery, filters: filters);
 
+      final hasCache = all.isNotEmpty && all.any((e) => e.isFromCache);
       state = state.copyWith(
         isLoading: false,
         allDoctors: all,
+        isFromCache: hasCache,
+        errorMessage: hasCache ? all.firstWhere((e) => e.isFromCache).cacheError : null,
       );
     } catch (e) {
-      state = state.copyWith(isLoading: false, errorMessage: 'Filtering failed: $e');
+      final appEx = mapErrorToException(e);
+      state = state.copyWith(
+        isLoading: false,
+        errorMessage: appEx.message,
+        isFromCache: false,
+      );
     }
   }
 

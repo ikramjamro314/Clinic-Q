@@ -2,8 +2,9 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' as sb;
 import 'package:dio/dio.dart';
+import 'package:drift/drift.dart' as d;
 
-import '../../../../core/error/exceptions.dart';
+import '../../../../core/error/auth_exceptions.dart';
 import '../../../../core/network/api_response.dart';
 import '../../domain/entities/user_entity.dart';
 import '../../domain/entities/user_profile.dart';
@@ -11,12 +12,17 @@ import '../../domain/repositories/auth_repository.dart';
 import '../models/user_model.dart';
 import '../models/user_profile_model.dart';
 import '../services/supabase_auth_service.dart';
+import '../local/profile_local_data_source.dart';
+import '../../../../core/local/app_database.dart';
+import '../../../../core/error/exception_mapper.dart';
+import '../../../../core/error/app_exception.dart' as core_ex;
 
 class SupabaseAuthRepositoryImpl implements AuthRepository {
   final SupabaseAuthService _service;
   final Dio _dio;
+  final ProfileLocalDataSource _localDataSource;
 
-  SupabaseAuthRepositoryImpl(this._service, this._dio);
+  SupabaseAuthRepositoryImpl(this._service, this._dio, this._localDataSource);
 
   // ── Sign in ───────────────────────────────────────────────────────────────
 
@@ -173,28 +179,52 @@ class SupabaseAuthRepositoryImpl implements AuthRepository {
     return _toUserModel(supaUser, supaUser.email ?? '');
   }
 
-  // ── Profile update ────────────────────────────────────────────────────────
-
   @override
-  Future<void> updateProfile({
-    required String firstName,
-    required String lastName,
+  Future<void> createOrUpdateProfile({
+    required String name,
+    required String phone,
     required String gender,
-    required String dateOfBirth,
+    required String dob,
     required String email,
+    required String userId,
   }) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      await Future.wait([
-        prefs.setString('user_first_name', firstName),
-        prefs.setString('user_last_name', lastName),
-        prefs.setString('user_gender', gender),
-        prefs.setString('user_dob', dateOfBirth),
-        prefs.setString('user_email', email),
-      ]);
-    } catch (e, stack) {
-      debugPrint('SupabaseAuthRepositoryImpl.updateProfile failed: $e\n$stack');
-      throw AuthException('Failed to save profile. Please try again.');
+      final response = await _dio.patch(
+        '/api/patient/profile',
+        data: {
+          'name': name,
+          'phone': phone,
+          'gender': gender.toLowerCase(),
+          'dob': dob,
+          'email': email,
+          'userId': userId,
+        },
+      );
+
+      final rawData = ApiResponse.process(response.data);
+      final networkProfile = UserProfileModel.fromJson(
+        rawData as Map<String, dynamic>,
+      );
+
+      // Cache profile locally in Drift
+      await _localDataSource.upsertProfile(
+        ProfileTableCompanion(
+          id: d.Value(networkProfile.id),
+          name: d.Value(networkProfile.name),
+          role: d.Value(networkProfile.role),
+          email: d.Value(networkProfile.email),
+          phone: d.Value(networkProfile.phone),
+          isAccountVerified: d.Value(networkProfile.isAccountVerified),
+          clinicId: d.Value(networkProfile.clinicId),
+          createdAt: d.Value(networkProfile.createdAt),
+          updatedAt: d.Value(networkProfile.updatedAt),
+          gender: d.Value(gender),
+          dateOfBirth: d.Value(dob),
+          cachedAt: d.Value(DateTime.now()),
+        ),
+      );
+    } catch (error) {
+      throw mapErrorToException(error);
     }
   }
 
@@ -226,18 +256,90 @@ class SupabaseAuthRepositoryImpl implements AuthRepository {
     }
   }
 
+  bool _isCacheValid(DateTime? cachedAt) {
+    if (cachedAt == null) return false;
+    final now = DateTime.now();
+    final difference = now.difference(cachedAt);
+    return difference.inHours < 24;
+  }
+
   @override
   Future<UserProfile> getProfile() async {
+    final cachedRow = await _localDataSource.getCachedProfile();
+    if (cachedRow != null && _isCacheValid(cachedRow.cachedAt)) {
+      debugPrint(
+        '[ProfileRepository] Profile cache is fresh (<24h) — serving from CACHE',
+      );
+      return UserProfile(
+        id: cachedRow.id,
+        name: cachedRow.name,
+        role: cachedRow.role,
+        email: cachedRow.email,
+        phone: cachedRow.phone,
+        isAccountVerified: cachedRow.isAccountVerified,
+        clinicId: cachedRow.clinicId,
+        createdAt: cachedRow.createdAt,
+        updatedAt: cachedRow.updatedAt,
+        gender: cachedRow.gender,
+        dateOfBirth: cachedRow.dateOfBirth,
+      );
+    }
+
     try {
       final response = await _dio.get('/api/patient/profile');
       final rawData = ApiResponse.process(response.data);
-      return UserProfileModel.fromJson(rawData as Map<String, dynamic>);
-    } on NetworkException {
-      rethrow;
-    } catch (e, stack) {
-      debugPrint('SupabaseAuthRepositoryImpl.getProfile failed: $e\n$stack');
-      throw NetworkException('Failed to load user profile: $e');
+      final networkProfile = UserProfileModel.fromJson(
+        rawData as Map<String, dynamic>,
+      );
+
+      // Cache profile locally in Drift
+      await _localDataSource.upsertProfile(
+        ProfileTableCompanion(
+          id: d.Value(networkProfile.id),
+          name: d.Value(networkProfile.name),
+          role: d.Value(networkProfile.role),
+          email: d.Value(networkProfile.email),
+          phone: d.Value(networkProfile.phone),
+          isAccountVerified: d.Value(networkProfile.isAccountVerified),
+          clinicId: d.Value(networkProfile.clinicId),
+          createdAt: d.Value(networkProfile.createdAt),
+          updatedAt: d.Value(networkProfile.updatedAt),
+          gender: d.Value(networkProfile.gender),
+          dateOfBirth: d.Value(networkProfile.dateOfBirth),
+          cachedAt: d.Value(DateTime.now()),
+        ),
+      );
+
+      debugPrint('[ProfileRepository] Fetched from NETWORK — 1 items');
+      return networkProfile;
+    } catch (error) {
+      final appEx = mapErrorToException(error);
+      debugPrint(
+        '[ProfileRepository] NETWORK failed — falling back to CACHE: $appEx',
+      );
+
+      if (cachedRow != null) {
+        final profile = UserProfile(
+          id: cachedRow.id,
+          name: cachedRow.name,
+          role: cachedRow.role,
+          email: cachedRow.email,
+          phone: cachedRow.phone,
+          isAccountVerified: cachedRow.isAccountVerified,
+          clinicId: cachedRow.clinicId,
+          createdAt: cachedRow.createdAt,
+          updatedAt: cachedRow.updatedAt,
+          gender: cachedRow.gender,
+          dateOfBirth: cachedRow.dateOfBirth,
+          isFromCache: true,
+          cacheError: appEx.message,
+        );
+        debugPrint(
+          '[ProfileRepository] Returned 1 items from CACHE (cachedAt: ${cachedRow.cachedAt.toIso8601String()})',
+        );
+        return profile;
+      }
+      throw appEx;
     }
   }
 }
-
