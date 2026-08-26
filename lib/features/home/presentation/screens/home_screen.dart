@@ -166,6 +166,8 @@ class HomeScreen extends ConsumerWidget {
                       // Quick action layout (Clinics/Doctors navigation tiles)
                       HomeQuickActions(
                         onFindClinicTap: () => context.push(AppRoutes.clinics),
+                        onMyRecordsTap: () =>
+                            context.push(AppRoutes.appointmentHistory),
                         onSupportTap: () =>
                             context.push(AppRoutes.profileTermsAndPolicy),
                       ),

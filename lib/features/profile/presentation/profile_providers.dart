@@ -14,7 +14,7 @@ export '../data/repositories/content_repository_impl.dart'
 
 // ViewModels
 final profileViewModelProvider =
-    NotifierProvider.autoDispose<ProfileViewModel, ProfileState>(
+    NotifierProvider<ProfileViewModel, ProfileState>(
       ProfileViewModel.new,
     );
 

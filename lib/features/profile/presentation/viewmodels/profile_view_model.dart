@@ -42,9 +42,11 @@ class ProfileViewModel extends Notifier<ProfileState> {
     state = state.copyWith(isLoading: true, errorMessage: null);
     try {
       final profile = await ref.read(authRepositoryProvider).getProfile();
+      if (!ref.mounted) return;
       state = state.copyWith(profile: profile, isLoading: false);
       ref.read(hasProfileProvider.notifier).setState(true);
     } catch (e) {
+      if (!ref.mounted) return;
       if (e is NotFoundException) {
         ref.read(hasProfileProvider.notifier).setState(false);
       }
@@ -65,21 +67,28 @@ class ProfileViewModel extends Notifier<ProfileState> {
       isSuccess: false,
     );
     try {
-      await ref
-          .read(authRepositoryProvider)
-          .createOrUpdateProfile(
-            name: name,
-            gender: gender,
-            dob: dateOfBirth,
-            email: email,
-            userId: ref.read(authRepositoryProvider).getCurrentUser()!.id,
-            phone: phone.trim(),
-          );
+      final authRepo = ref.read(authRepositoryProvider);
+      final currentUser = authRepo.getCurrentUser();
+      if (currentUser == null) throw Exception('No logged-in user');
+
+      await authRepo.createOrUpdateProfile(
+        name: name,
+        gender: gender,
+        dob: dateOfBirth,
+        email: email,
+        userId: currentUser.id,
+        phone: phone.trim(),
+      );
+
+      if (!ref.mounted) return false;
 
       // Re-fetch profile to load updated cached data
       final updatedProfile = await ref
           .read(authRepositoryProvider)
           .getProfile();
+      
+      if (!ref.mounted) return true;
+
       state = state.copyWith(
         profile: updatedProfile,
         isLoading: false,
@@ -87,6 +96,7 @@ class ProfileViewModel extends Notifier<ProfileState> {
       );
       return true;
     } catch (e) {
+      if (!ref.mounted) return false;
       state = state.copyWith(errorMessage: e.toString(), isLoading: false);
       return false;
     }
@@ -94,6 +104,7 @@ class ProfileViewModel extends Notifier<ProfileState> {
 
   Future<void> signOut() async {
     await ref.read(authRepositoryProvider).signOut();
+    if (!ref.mounted) return;
     ref.read(hasProfileProvider.notifier).setState(null);
   }
 }

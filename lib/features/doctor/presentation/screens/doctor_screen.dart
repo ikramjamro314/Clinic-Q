@@ -27,11 +27,30 @@ class DoctorScreen extends ConsumerStatefulWidget {
 
 class _DoctorScreenState extends ConsumerState<DoctorScreen> {
   final TextEditingController _searchController = TextEditingController();
+  final FocusNode _searchFocusNode = FocusNode();
+
+  @override
+  void initState() {
+    super.initState();
+    _searchFocusNode.addListener(_onSearchFocusChange);
+    _searchController.addListener(_onSearchTextChange);
+  }
 
   @override
   void dispose() {
+    _searchFocusNode.removeListener(_onSearchFocusChange);
+    _searchController.removeListener(_onSearchTextChange);
+    _searchFocusNode.dispose();
     _searchController.dispose();
     super.dispose();
+  }
+
+  void _onSearchFocusChange() {
+    if (mounted) setState(() {});
+  }
+
+  void _onSearchTextChange() {
+    if (mounted) setState(() {});
   }
 
   @override
@@ -146,6 +165,7 @@ class _DoctorScreenState extends ConsumerState<DoctorScreen> {
                             // Search field
                             ClinicQTextField(
                               controller: _searchController,
+                              focusNode: _searchFocusNode,
                               hintText: 'Search',
                               prefixIcon: Icons.search_rounded,
                               isPill: false,
@@ -160,8 +180,27 @@ class _DoctorScreenState extends ConsumerState<DoctorScreen> {
                                   ? Icons.close_rounded
                                   : null,
                             ),
-                            const SizedBox(height: 24),
-                            const DoctorBanner(),
+                            AnimatedSize(
+                              duration: const Duration(milliseconds: 300),
+                              curve: Curves.easeInOut,
+                              child: ClipRect(
+                                child: Align(
+                                  alignment: Alignment.topCenter,
+                                  heightFactor: (_searchFocusNode.hasFocus || _searchController.text.isNotEmpty) ? 0.0 : 1.0,
+                                  child: AnimatedOpacity(
+                                    duration: const Duration(milliseconds: 200),
+                                    opacity: (_searchFocusNode.hasFocus || _searchController.text.isNotEmpty) ? 0.0 : 1.0,
+                                    curve: Curves.easeInOut,
+                                    child: Column(
+                                      children: const [
+                                        SizedBox(height: 24),
+                                        DoctorBanner(),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
                             const SizedBox(height: 24),
 
                             // All Doctors Section
@@ -202,6 +241,8 @@ class _DoctorScreenState extends ConsumerState<DoctorScreen> {
             context.go(AppRoutes.clinics);
           } else if (index == 2) {
             context.go(AppRoutes.home);
+          } else if (index == 3) {
+            context.go(AppRoutes.trackingDebug);
           } else if (index == 4) {
             context.go(AppRoutes.profile);
           }

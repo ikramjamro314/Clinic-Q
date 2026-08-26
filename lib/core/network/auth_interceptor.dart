@@ -23,6 +23,7 @@ class AuthInterceptor extends Interceptor {
 
     if (session != null) {
       final token = session.accessToken;
+      debugPrint('[AuthInterceptor] token: $token');
       options.headers['Authorization'] = 'Bearer $token';
       debugPrint('[AuthInterceptor] Authorization header added.');
     } else {

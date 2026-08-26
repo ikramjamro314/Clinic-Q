@@ -23,6 +23,7 @@ class AppRoutes {
   static const String clinicView = '/clinics/:id';
   static const String selectDoctor = '/clinics/:id/select-doctor';
   static const String trackingDebug = '/tracking-debug';
+  static const String appointmentHistory = '/appointments/history';
   static const String bookingTokenInfo = '/booking/token-info';
   static const String bookingConfirm = '/booking/confirm';
   static const String bookingSuccess = '/booking/success';

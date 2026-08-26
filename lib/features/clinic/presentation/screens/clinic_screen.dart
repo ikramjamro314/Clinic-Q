@@ -136,10 +136,12 @@ class _ClinicScreenState extends ConsumerState<ClinicScreen> {
       bottomNavigationBar: HomeBottomNavBar(
         currentIndex: 0, // 0 is Clinics tab
         onTap: (index) {
-          if (index == 2) {
-            context.go(AppRoutes.home);
-          } else if (index == 1) {
+          if (index == 1) {
             context.go(AppRoutes.doctors);
+          } else if (index == 2) {
+            context.go(AppRoutes.home);
+          } else if (index == 3) {
+            context.go(AppRoutes.trackingDebug);
           } else if (index == 4) {
             context.go(AppRoutes.profile);
           }

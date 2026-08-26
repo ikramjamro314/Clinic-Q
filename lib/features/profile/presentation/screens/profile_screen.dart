@@ -298,6 +298,8 @@ class ProfileScreen extends ConsumerWidget {
             context.go(AppRoutes.doctors);
           } else if (index == 2) {
             context.go(AppRoutes.home);
+          } else if (index == 3) {
+            context.go(AppRoutes.trackingDebug);
           }
         },
       ),

@@ -24,6 +24,7 @@ class ClinicQTextField extends StatefulWidget {
     this.borderRadius = 12,
     this.onChanged,
     this.onSubmitted,
+    this.focusNode,
   });
 
   final String? label;
@@ -46,33 +47,53 @@ class ClinicQTextField extends StatefulWidget {
   final double borderRadius;
   final ValueChanged<String>? onChanged;
   final ValueChanged<String>? onSubmitted;
+  final FocusNode? focusNode;
 
   @override
   State<ClinicQTextField> createState() => _ClinicQTextFieldState();
 }
 
 class _ClinicQTextFieldState extends State<ClinicQTextField> {
-  late FocusNode _focusNode;
+  FocusNode? _localFocusNode;
+  FocusNode get _effectiveFocusNode => widget.focusNode ?? (_localFocusNode ??= FocusNode());
   bool _isFocused = false;
 
   @override
   void initState() {
     super.initState();
-    _focusNode = FocusNode();
-    _focusNode.addListener(_handleFocusChange);
+    _effectiveFocusNode.addListener(_handleFocusChange);
+  }
+
+  @override
+  void didUpdateWidget(covariant ClinicQTextField oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.focusNode != oldWidget.focusNode) {
+      oldWidget.focusNode?.removeListener(_handleFocusChange);
+      _localFocusNode?.removeListener(_handleFocusChange);
+
+      if (widget.focusNode != null && _localFocusNode != null) {
+        _localFocusNode!.dispose();
+        _localFocusNode = null;
+      }
+
+      _effectiveFocusNode.addListener(_handleFocusChange);
+      _isFocused = _effectiveFocusNode.hasFocus;
+    }
   }
 
   @override
   void dispose() {
-    _focusNode.removeListener(_handleFocusChange);
-    _focusNode.dispose();
+    _effectiveFocusNode.removeListener(_handleFocusChange);
+    _localFocusNode?.dispose();
     super.dispose();
   }
 
   void _handleFocusChange() {
-    setState(() {
-      _isFocused = _focusNode.hasFocus;
-    });
+    if (mounted) {
+      setState(() {
+        _isFocused = _effectiveFocusNode.hasFocus;
+      });
+    }
   }
 
   @override
@@ -142,7 +163,7 @@ class _ClinicQTextFieldState extends State<ClinicQTextField> {
       onTap: widget.onTap,
       onChanged: widget.onChanged,
       onSubmitted: widget.onSubmitted,
-      focusNode: _focusNode,
+      focusNode: _effectiveFocusNode,
       style: widget.textStyle ??
           theme.textTheme.bodyMedium?.copyWith(
             color: isDark ? Colors.white : ClinicQColors.textPrimary,

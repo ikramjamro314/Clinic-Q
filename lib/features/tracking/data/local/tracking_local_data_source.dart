@@ -26,6 +26,12 @@ class TrackingLocalDataSource {
     return token?.doctorId;
   }
 
+  Future<String?> getClinicIdByTokenId(String tokenId) async {
+    final query = _db.select(_db.tokensTable)..where((t) => t.id.equals(tokenId));
+    final token = await query.getSingleOrNull();
+    return token?.clinicId;
+  }
+
   Future<void> clearCache() async {
     await _db.delete(_db.trackingCacheTable).go();
   }

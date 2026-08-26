@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../../app/app_routes.dart';
 
 import '../../../../core/theme/clinic_q_colors.dart';
 import '../../../../core/widgets/feedback/clinicq_loader.dart';
@@ -56,36 +57,99 @@ class TrackingScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     if (tokenId != null) {
-      return _TrackingContent(tokenId: tokenId!);
+      return _TrackingContent(tokenId: tokenId!, showBottomNav: false);
     }
 
     final activeTokenAsync = ref.watch(activeTokenLookupProvider);
 
-    return Scaffold(
-      backgroundColor: ClinicQColors.appBackground,
-      appBar: AppBar(
+    return activeTokenAsync.when(
+      loading: () => Scaffold(
         backgroundColor: ClinicQColors.appBackground,
-        elevation: 0,
-        title: const Text(
-          'Live Tracking',
-          style: TextStyle(
-            color: ClinicQColors.textPrimary,
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
+        appBar: AppBar(
+          backgroundColor: ClinicQColors.appBackground,
+          elevation: 0,
+          title: const Text(
+            'Live Tracking',
+            style: TextStyle(
+              color: ClinicQColors.textPrimary,
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+            ),
           ),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.history_rounded, color: ClinicQColors.textPrimary),
+              onPressed: () => context.push(AppRoutes.appointmentHistory),
+              tooltip: 'Appointment History',
+            ),
+          ],
+        ),
+        body: const Center(child: ClinicQLoader()),
+        bottomNavigationBar: HomeBottomNavBar(
+          currentIndex: 3,
+          onTap: (index) {
+            _handleNavigation(context, index);
+          },
         ),
       ),
-      body: activeTokenAsync.when(
-        loading: () => const Center(child: ClinicQLoader()),
-        error: (err, stack) => Center(
+      error: (err, stack) => Scaffold(
+        backgroundColor: ClinicQColors.appBackground,
+        appBar: AppBar(
+          backgroundColor: ClinicQColors.appBackground,
+          elevation: 0,
+          title: const Text(
+            'Live Tracking',
+            style: TextStyle(
+              color: ClinicQColors.textPrimary,
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.history_rounded, color: ClinicQColors.textPrimary),
+              onPressed: () => context.push(AppRoutes.appointmentHistory),
+              tooltip: 'Appointment History',
+            ),
+          ],
+        ),
+        body: Center(
           child: ClinicQErrorWidget(
             message: 'Failed to look up active appointments.',
             onRetry: () => ref.refresh(activeTokenLookupProvider),
           ),
         ),
-        data: (activeToken) {
-          if (activeToken == null) {
-            return Center(
+        bottomNavigationBar: HomeBottomNavBar(
+          currentIndex: 3,
+          onTap: (index) {
+            _handleNavigation(context, index);
+          },
+        ),
+      ),
+      data: (activeToken) {
+        if (activeToken == null) {
+          return Scaffold(
+            backgroundColor: ClinicQColors.appBackground,
+            appBar: AppBar(
+              backgroundColor: ClinicQColors.appBackground,
+              elevation: 0,
+              title: const Text(
+                'Live Tracking',
+                style: TextStyle(
+                  color: ClinicQColors.textPrimary,
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              actions: [
+                IconButton(
+                  icon: const Icon(Icons.history_rounded, color: ClinicQColors.textPrimary),
+                  onPressed: () => context.push(AppRoutes.appointmentHistory),
+                  tooltip: 'Appointment History',
+                ),
+              ],
+            ),
+            body: Center(
               child: Padding(
                 padding: const EdgeInsets.all(32.0),
                 child: Column(
@@ -132,30 +196,32 @@ class TrackingScreen extends ConsumerWidget {
                   ],
                 ),
               ),
-            );
-          }
-          return _TrackingContent(tokenId: activeToken.id, showBottomNav: true);
-        },
-      ),
-      bottomNavigationBar: tokenId == null
-          ? HomeBottomNavBar(
+            ),
+            bottomNavigationBar: HomeBottomNavBar(
               currentIndex: 3,
               onTap: (index) {
-                if (index == 0) {
-                  context.go('/clinics');
-                } else if (index == 1) {
-                  context.go('/doctors');
-                } else if (index == 2) {
-                  context.go('/home');
-                } else if (index == 3) {
-                  // Already on tracking
-                } else if (index == 4) {
-                  context.go('/profile');
-                }
+                _handleNavigation(context, index);
               },
-            )
-          : null,
+            ),
+          );
+        }
+        return _TrackingContent(tokenId: activeToken.id, showBottomNav: true);
+      },
     );
+  }
+
+  void _handleNavigation(BuildContext context, int index) {
+    if (index == 0) {
+      context.go('/clinics');
+    } else if (index == 1) {
+      context.go('/doctors');
+    } else if (index == 2) {
+      context.go('/home');
+    } else if (index == 3) {
+      // Already on tracking
+    } else if (index == 4) {
+      context.go('/profile');
+    }
   }
 }
 
@@ -239,24 +305,32 @@ class _TrackingContent extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: ClinicQColors.appBackground,
-      appBar: showBottomNav
-          ? null
-          : AppBar(
-              backgroundColor: ClinicQColors.appBackground,
-              elevation: 0,
-              leading: IconButton(
+      appBar: AppBar(
+        backgroundColor: ClinicQColors.appBackground,
+        elevation: 0,
+        automaticallyImplyLeading: !showBottomNav,
+        leading: showBottomNav
+            ? null
+            : IconButton(
                 icon: const Icon(Icons.arrow_back, color: ClinicQColors.textPrimary),
                 onPressed: () => context.pop(),
               ),
-              title: const Text(
-                'Live Tracking',
-                style: TextStyle(
-                  color: ClinicQColors.textPrimary,
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
+        title: const Text(
+          'Live Tracking',
+          style: TextStyle(
+            color: ClinicQColors.textPrimary,
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.history_rounded, color: ClinicQColors.textPrimary),
+            onPressed: () => context.push(AppRoutes.appointmentHistory),
+            tooltip: 'Appointment History',
+          ),
+        ],
+      ),
       body: SafeArea(
         child: Column(
           children: [

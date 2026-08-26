@@ -3,6 +3,7 @@ import 'package:clinic_q/features/tracking/presentation/screens/tracking_screen.
 import 'package:clinic_q/features/tracking/presentation/screens/token_info_screen.dart';
 import 'package:clinic_q/features/tracking/presentation/screens/confirm_booking_screen.dart';
 import 'package:clinic_q/features/tracking/presentation/screens/booking_success_screen.dart';
+import 'package:clinic_q/features/tracking/presentation/screens/appointment_history_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -36,7 +37,6 @@ final initialLocationProvider = Provider<String>((ref) => AppRoutes.splash);
 final routerProvider = Provider<GoRouter>((ref) {
   final authRepository = ref.watch(authRepositoryProvider);
   final initialLocation = ref.watch(initialLocationProvider);
-  final hasProfile = ref.watch(hasProfileProvider);
 
   return GoRouter(
     initialLocation: initialLocation,
@@ -74,6 +74,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       final isProfileRoute =
           state.matchedLocation.startsWith('/profile') &&
           state.matchedLocation != AppRoutes.profileDetails;
+      final hasProfile = ref.read(hasProfileProvider);
       if (isProfileRoute && hasProfile == false) {
         return AppRoutes.profileDetails;
       }
@@ -266,6 +267,14 @@ final routerProvider = Provider<GoRouter>((ref) {
           state: state,
           child: const TrackingScreen(),
           transitionType: AppTransitionType.fade,
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.appointmentHistory,
+        pageBuilder: (context, state) => buildPageWithTransition(
+          state: state,
+          child: const AppointmentHistoryScreen(),
+          transitionType: AppTransitionType.slideLeft,
         ),
       ),
       GoRoute(

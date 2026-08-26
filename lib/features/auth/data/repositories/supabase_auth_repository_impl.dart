@@ -224,6 +224,17 @@ class SupabaseAuthRepositoryImpl implements AuthRepository {
         ),
       );
     } catch (error) {
+      if (error is DioException) {
+        debugPrint('>>> createOrUpdateProfile DioException: ${error.type}');
+        debugPrint(
+          '>>> createOrUpdateProfile response status: ${error.response?.statusCode}',
+        );
+        debugPrint(
+          '>>> createOrUpdateProfile response data: ${error.response?.data}',
+        );
+      } else {
+        debugPrint('>>> createOrUpdateProfile unexpected error: $error');
+      }
       throw mapErrorToException(error);
     }
   }
