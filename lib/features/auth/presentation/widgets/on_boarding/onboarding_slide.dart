@@ -7,20 +7,36 @@ class OnboardingSlide extends StatelessWidget {
     super.key,
     required this.title,
     required this.description,
-    required this.svgAssetPath,
+    this.imageAssetPath,
+    this.svgAssetPath,
     required this.stepNumber,
     this.totalSteps = 3,
     this.onSkip,
     this.showSkip = true,
-  });
+  }) : assert(imageAssetPath != null || svgAssetPath != null, 'Either imageAssetPath or svgAssetPath must be provided');
 
   final String title;
   final String description;
-  final String svgAssetPath;
+  final String? imageAssetPath;
+  final String? svgAssetPath;
   final int stepNumber;
   final int totalSteps;
   final VoidCallback? onSkip;
   final bool showSkip;
+
+  Widget _buildIllustration() {
+    final asset = imageAssetPath ?? svgAssetPath ?? '';
+    if (asset.toLowerCase().endsWith('.svg')) {
+      return SvgPicture.asset(
+        asset,
+        fit: BoxFit.contain,
+      );
+    }
+    return Image.asset(
+      asset,
+      fit: BoxFit.contain,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -33,25 +49,29 @@ class OnboardingSlide extends StatelessWidget {
           child: Container(
             width: double.infinity,
             decoration: BoxDecoration(
-              color: const Color(0xFFF0FDFA),
+              color: Colors.white,
               borderRadius: BorderRadius.circular(32),
               border: Border.all(color: ClinicQColors.dividerLight, width: 1.0),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.03),
+                  blurRadius: 16,
+                  offset: const Offset(0, 4),
+                ),
+              ],
             ),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(32),
               child: Stack(
                 children: [
-                  // SVG Illustration
+                  // Illustration / Image
                   Positioned.fill(
                     child: Padding(
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 24,
-                        vertical: 36,
+                        horizontal: 16,
+                        vertical: 24,
                       ),
-                      child: SvgPicture.asset(
-                        svgAssetPath,
-                        fit: BoxFit.contain,
-                      ),
+                      child: _buildIllustration(),
                     ),
                   ),
 

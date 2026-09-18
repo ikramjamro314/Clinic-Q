@@ -55,7 +55,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                       title: 'Easy appointment\nbooking.',
                       description:
                           'Book with confidence\n- Easy to use\n- Quick operation',
-                      svgAssetPath: 'assets/onboarding/step_1.svg',
+                      imageAssetPath: 'assets/onboarding/step_1.jpeg',
                       stepNumber: 1,
                       totalSteps: onboardingState.totalSlides,
                       onSkip: _finishOnboarding,
@@ -64,10 +64,10 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                           onboardingState.totalSlides - 1,
                     ),
                     OnboardingSlide(
-                      title: 'Profile security\n& care history.',
+                      title: 'Track your place\nin the line.',
                       description:
-                          'Keep a careful record of your\nexaminations.',
-                      svgAssetPath: 'assets/onboarding/step_2.svg',
+                          'Your queue number is confirmed.\nReal-time updates let you know exactly when it is your turn.',
+                      imageAssetPath: 'assets/onboarding/step_2.jpeg',
                       stepNumber: 2,
                       totalSteps: onboardingState.totalSlides,
                       onSkip: _finishOnboarding,
@@ -76,10 +76,10 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                           onboardingState.totalSlides - 1,
                     ),
                     OnboardingSlide(
-                      title: 'Quick action,\nanywhere.',
+                      title: 'Booking confirmed\n& all set!',
                       description:
-                          'Make an appointment at any time\nand from any location. Operation is\nsimple.',
-                      svgAssetPath: 'assets/onboarding/step_3.svg',
+                          'Experience seamless healthcare consultations with fast check-ins and prompt care.',
+                      imageAssetPath: 'assets/onboarding/step_3.jpeg',
                       stepNumber: 3,
                       totalSteps: onboardingState.totalSlides,
                       onSkip: _finishOnboarding,
