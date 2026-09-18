@@ -4,6 +4,7 @@ import 'package:clinic_q/features/tracking/presentation/screens/token_info_scree
 import 'package:clinic_q/features/tracking/presentation/screens/confirm_booking_screen.dart';
 import 'package:clinic_q/features/tracking/presentation/screens/booking_success_screen.dart';
 import 'package:clinic_q/features/tracking/presentation/screens/appointment_history_screen.dart';
+import 'package:clinic_q/features/tracking/presentation/screens/tracking_completed_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -145,8 +146,11 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: AppRoutes.profile,
-        pageBuilder: (context, state) =>
-            buildPageWithTransition(state: state, child: const ProfileScreen()),
+        pageBuilder: (context, state) => buildPageWithTransition(
+          state: state,
+          child: const ProfileScreen(),
+          transitionType: AppTransitionType.fade,
+        ),
       ),
       GoRoute(
         path: AppRoutes.profileEdit,
@@ -190,8 +194,11 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: AppRoutes.home,
-        pageBuilder: (context, state) =>
-            buildPageWithTransition(state: state, child: const HomeScreen()),
+        pageBuilder: (context, state) => buildPageWithTransition(
+          state: state,
+          child: const HomeScreen(),
+          transitionType: AppTransitionType.fade,
+        ),
       ),
       GoRoute(
         path: AppRoutes.clinics,
@@ -262,14 +269,6 @@ final routerProvider = Provider<GoRouter>((ref) {
         },
       ),
       GoRoute(
-        path: AppRoutes.trackingDebug,
-        pageBuilder: (context, state) => buildPageWithTransition(
-          state: state,
-          child: const TrackingScreen(),
-          transitionType: AppTransitionType.fade,
-        ),
-      ),
-      GoRoute(
         path: AppRoutes.appointmentHistory,
         pageBuilder: (context, state) => buildPageWithTransition(
           state: state,
@@ -284,20 +283,27 @@ final routerProvider = Provider<GoRouter>((ref) {
           return buildPageWithTransition(
             state: state,
             child: TrackingScreen(tokenId: id),
+            transitionType: AppTransitionType.fade,
+          );
+        },
+      ),
+      GoRoute(
+        path: AppRoutes.trackingCompleted,
+        pageBuilder: (context, state) {
+          final id = state.pathParameters['id'] ?? '';
+          return buildPageWithTransition(
+            state: state,
+            child: TrackingCompletedScreen(tokenId: id),
             transitionType: AppTransitionType.slideLeft,
           );
         },
       ),
       GoRoute(
         path: AppRoutes.bookingTokenInfo,
-        pageBuilder: (context, state) {
+        redirect: (context, state) {
           final doctorId = state.uri.queryParameters['doctorId'] ?? '';
           final clinicId = state.uri.queryParameters['clinicId'] ?? '';
-          return buildPageWithTransition(
-            state: state,
-            child: TokenInfoScreen(doctorId: doctorId, clinicId: clinicId),
-            transitionType: AppTransitionType.slideLeft,
-          );
+          return '${AppRoutes.bookingConfirm}?doctorId=$doctorId&clinicId=$clinicId';
         },
       ),
       GoRoute(

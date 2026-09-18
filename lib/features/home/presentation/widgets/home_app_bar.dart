@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../../core/theme/clinic_q_colors.dart';
+import '../../../../app/theme/clinic_q_colors.dart';
 import '../../../../core/widgets/display/clinicq_avatar.dart';
 
 class HomeAppBar extends StatelessWidget implements PreferredSizeWidget {

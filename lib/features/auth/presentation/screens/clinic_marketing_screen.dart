@@ -4,8 +4,8 @@ import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../app/app_routes.dart';
-import '../../../../core/theme/clinic_q_colors.dart';
-import '../../../../core/theme/clinic_q_theme.dart';
+import '../../../../app/theme/clinic_q_colors.dart';
+import '../../../../app/theme/clinic_q_theme.dart';
 import '../../../../core/widgets/buttons/clinicq_button.dart';
 import '../../../../core/widgets/layout/clinicq_gradient_background.dart';
 import '../widgets/marketing/clinic_marketing_feature_item.dart';

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../theme/clinic_q_colors.dart';
+import '../../../app/theme/clinic_q_colors.dart';
 
 class ClinicQAvatar extends StatelessWidget {
   const ClinicQAvatar({
@@ -24,12 +24,14 @@ class ClinicQAvatar extends StatelessWidget {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    final resolvedBgColor = backgroundColor ??
+    final resolvedBgColor =
+        backgroundColor ??
         (isDark
             ? ClinicQColors.darkSurfaceVariant
             : ClinicQColors.primaryTeal.withOpacity(0.1));
-            
-    final resolvedFgColor = foregroundColor ??
+
+    final resolvedFgColor =
+        foregroundColor ??
         (isDark ? Colors.white70 : ClinicQColors.primaryTeal);
 
     Widget? avatarContent;
@@ -41,7 +43,8 @@ class ClinicQAvatar extends StatelessWidget {
           width: radius * 2,
           height: radius * 2,
           fit: BoxFit.cover,
-          errorBuilder: (context, error, stackTrace) => _buildInitialsWidget(resolvedFgColor),
+          errorBuilder: (context, error, stackTrace) =>
+              _buildInitialsWidget(resolvedFgColor),
           loadingBuilder: (context, child, loadingProgress) {
             if (loadingProgress == null) return child;
             return Center(
@@ -52,7 +55,7 @@ class ClinicQAvatar extends StatelessWidget {
                   strokeWidth: 2.0,
                   value: loadingProgress.expectedTotalBytes != null
                       ? loadingProgress.cumulativeBytesLoaded /
-                          loadingProgress.expectedTotalBytes!
+                            loadingProgress.expectedTotalBytes!
                       : null,
                 ),
               ),
@@ -67,7 +70,8 @@ class ClinicQAvatar extends StatelessWidget {
           width: radius * 2,
           height: radius * 2,
           fit: BoxFit.cover,
-          errorBuilder: (context, error, stackTrace) => _buildInitialsWidget(resolvedFgColor),
+          errorBuilder: (context, error, stackTrace) =>
+              _buildInitialsWidget(resolvedFgColor),
         ),
       );
     } else {

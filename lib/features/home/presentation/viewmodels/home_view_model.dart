@@ -8,9 +8,20 @@ import 'home_state.dart';
 class HomeNotifier extends Notifier<HomeState> {
   @override
   HomeState build() {
+    final currentUser = ref.watch(authRepositoryProvider).getCurrentUser();
+    String initialName = '';
+    if (currentUser != null) {
+      if (currentUser.firstName != null &&
+          currentUser.firstName!.trim().isNotEmpty) {
+        initialName = currentUser.firstName!.trim();
+      } else if (currentUser.email.isNotEmpty) {
+        initialName = currentUser.email.split('@').first;
+      }
+    }
+
     // Schedule initial fetch after notifier is built
     Future.microtask(_loadHomeData);
-    return const HomeState(isLoading: true, userName: '');
+    return HomeState(isLoading: true, userName: initialName);
   }
 
   Future<void> _loadHomeData() async {
@@ -18,7 +29,9 @@ class HomeNotifier extends Notifier<HomeState> {
 
     try {
       bool isFromCache = false;
-      String name = 'User';
+      final currentUser = ref.read(authRepositoryProvider).getCurrentUser();
+      String name = state.userName.isNotEmpty ? state.userName : 'User';
+
       try {
         final profile = await ref.read(authRepositoryProvider).getProfile();
         if (profile.name.trim().isNotEmpty) {
@@ -29,13 +42,14 @@ class HomeNotifier extends Notifier<HomeState> {
         }
       } catch (e) {
         final profileState = ref.read(authProfileSyncNotifierProvider);
-        final currentUser = ref.read(authRepositoryProvider).getCurrentUser();
         if (profileState.name.trim().isNotEmpty) {
           name = profileState.name.trim().split(' ').first;
         } else if (currentUser != null &&
             currentUser.firstName != null &&
             currentUser.firstName!.trim().isNotEmpty) {
           name = currentUser.firstName!.trim();
+        } else if (currentUser != null && currentUser.email.isNotEmpty) {
+          name = currentUser.email.split('@').first;
         }
       }
 

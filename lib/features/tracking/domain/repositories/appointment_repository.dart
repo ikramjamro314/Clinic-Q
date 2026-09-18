@@ -17,6 +17,8 @@ abstract class AppointmentRepository {
 
   Future<void> cancelToken(String id);
 
+  Future<void> deleteToken(String id);
+
   Future<QueuePreview> getQueuePreview({
     required String doctorId,
     required String clinicId,

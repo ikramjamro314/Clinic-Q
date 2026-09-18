@@ -1,11 +1,8 @@
 import 'package:flutter/material.dart';
-import '../../../../core/theme/clinic_q_colors.dart';
+import '../../../../app/theme/clinic_q_colors.dart';
 
 class HomeHeader extends StatelessWidget {
-  const HomeHeader({
-    super.key,
-    required this.userName,
-  });
+  const HomeHeader({super.key, required this.userName});
 
   final String userName;
 
@@ -24,10 +21,7 @@ class HomeHeader extends StatelessWidget {
                 color: ClinicQColors.textSecondary,
               ),
             ),
-            const Text(
-              '👋',
-              style: TextStyle(fontSize: 14),
-            ),
+            const Text('👋', style: TextStyle(fontSize: 14)),
           ],
         ),
         const SizedBox(height: 4),

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../../core/theme/clinic_q_colors.dart';
+import '../../../../app/theme/clinic_q_colors.dart';
 
 class QueueStatBox extends StatelessWidget {
   final IconData icon;
@@ -42,11 +42,7 @@ class QueueStatBox extends StatelessWidget {
               color: iconBackgroundColor,
               shape: BoxShape.circle,
             ),
-            child: Icon(
-              icon,
-              color: iconColor,
-              size: 20,
-            ),
+            child: Icon(icon, color: iconColor, size: 20),
           ),
           const SizedBox(height: 16),
           Text(

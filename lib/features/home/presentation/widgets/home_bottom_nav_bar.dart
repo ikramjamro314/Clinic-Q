@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:curved_navigation_bar/curved_navigation_bar.dart';
-import '../../../../core/theme/clinic_q_colors.dart';
+import '../../../../app/theme/clinic_q_colors.dart';
 
 class HomeBottomNavBar extends StatelessWidget {
   const HomeBottomNavBar({
@@ -46,8 +46,8 @@ class HomeBottomNavBar extends StatelessWidget {
         ),
         _buildNavItem(
           index: 3,
-          icon: Icons.track_changes_rounded,
-          label: 'Tracking',
+          icon: Icons.queue_rounded,
+          label: 'Queue',
           showActiveDot: true,
         ),
         _buildNavItem(

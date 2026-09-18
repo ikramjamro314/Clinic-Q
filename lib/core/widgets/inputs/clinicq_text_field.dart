@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../theme/clinic_q_colors.dart';
+import '../../../app/theme/clinic_q_colors.dart';
 
 class ClinicQTextField extends StatefulWidget {
   const ClinicQTextField({
@@ -55,7 +55,8 @@ class ClinicQTextField extends StatefulWidget {
 
 class _ClinicQTextFieldState extends State<ClinicQTextField> {
   FocusNode? _localFocusNode;
-  FocusNode get _effectiveFocusNode => widget.focusNode ?? (_localFocusNode ??= FocusNode());
+  FocusNode get _effectiveFocusNode =>
+      widget.focusNode ?? (_localFocusNode ??= FocusNode());
   bool _isFocused = false;
 
   @override
@@ -100,7 +101,7 @@ class _ClinicQTextFieldState extends State<ClinicQTextField> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    
+
     final double computedRadius = widget.isPill ? 28.0 : widget.borderRadius;
     final BorderSide computedBorderSide = widget.isPill
         ? BorderSide.none
@@ -113,10 +114,7 @@ class _ClinicQTextFieldState extends State<ClinicQTextField> {
 
     final BorderSide focusedBorderSide = widget.isPill
         ? BorderSide.none
-        : const BorderSide(
-            color: ClinicQColors.inputBorderFocused,
-            width: 2.0,
-          );
+        : const BorderSide(color: ClinicQColors.inputBorderFocused, width: 2.0);
 
     // Dynamic coloring of prefix and suffix icons based on focus
     Widget? buildPrefixIcon() {
@@ -129,7 +127,9 @@ class _ClinicQTextFieldState extends State<ClinicQTextField> {
           size: 20,
           color: _isFocused
               ? (isDark ? ClinicQColors.lightTeal : ClinicQColors.primaryTeal)
-              : (isDark ? ClinicQColors.textTertiary : ClinicQColors.textSecondary),
+              : (isDark
+                    ? ClinicQColors.textTertiary
+                    : ClinicQColors.textSecondary),
         );
       }
       return null;
@@ -146,7 +146,9 @@ class _ClinicQTextFieldState extends State<ClinicQTextField> {
             size: 20,
             color: _isFocused
                 ? (isDark ? ClinicQColors.lightTeal : ClinicQColors.primaryTeal)
-                : (isDark ? ClinicQColors.textTertiary : ClinicQColors.textSecondary),
+                : (isDark
+                      ? ClinicQColors.textTertiary
+                      : ClinicQColors.textSecondary),
           ),
           onPressed: widget.onSuffixIconPressed,
         );
@@ -164,15 +166,19 @@ class _ClinicQTextFieldState extends State<ClinicQTextField> {
       onChanged: widget.onChanged,
       onSubmitted: widget.onSubmitted,
       focusNode: _effectiveFocusNode,
-      style: widget.textStyle ??
+      style:
+          widget.textStyle ??
           theme.textTheme.bodyMedium?.copyWith(
             color: isDark ? Colors.white : ClinicQColors.textPrimary,
           ),
       decoration: InputDecoration(
         hintText: widget.hintText,
-        hintStyle: widget.hintStyle ??
+        hintStyle:
+            widget.hintStyle ??
             theme.textTheme.bodyMedium?.copyWith(
-              color: isDark ? ClinicQColors.textTertiary : ClinicQColors.inputPlaceholder,
+              color: isDark
+                  ? ClinicQColors.textTertiary
+                  : ClinicQColors.inputPlaceholder,
             ),
         prefixIcon: buildPrefixIcon(),
         suffixIcon: buildSuffixIcon(),
@@ -193,10 +199,13 @@ class _ClinicQTextFieldState extends State<ClinicQTextField> {
           borderSide: focusedBorderSide,
         ),
         filled: true,
-        fillColor: widget.fillColor ??
+        fillColor:
+            widget.fillColor ??
             (widget.isPill
                 ? (isDark ? ClinicQColors.darkSurface : Colors.white)
-                : (isDark ? ClinicQColors.darkSurface : ClinicQColors.inputBackground)),
+                : (isDark
+                      ? ClinicQColors.darkSurface
+                      : ClinicQColors.inputBackground)),
       ),
     );
 

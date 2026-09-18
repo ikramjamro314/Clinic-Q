@@ -40,7 +40,8 @@ final appointmentRepositoryProvider = Provider<AppointmentRepository>((ref) {
 final trackingRepositoryProvider = Provider<TrackingRepository>((ref) {
   final apiService = TrackingApiService(ref.watch(dioProvider));
   final localSource = ref.watch(trackingLocalDataSourceProvider);
-  return TrackingRepositoryImpl(apiService, localSource);
+  final appointmentRepo = ref.watch(appointmentRepositoryProvider);
+  return TrackingRepositoryImpl(apiService, localSource, appointmentRepo);
 });
 
 final appointmentViewModelProvider = NotifierProvider<AppointmentNotifier, AppointmentState>(

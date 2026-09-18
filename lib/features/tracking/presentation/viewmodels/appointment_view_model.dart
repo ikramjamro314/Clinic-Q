@@ -89,4 +89,26 @@ class AppointmentNotifier extends Notifier<AppointmentState> {
       return false;
     }
   }
+
+  Future<bool> deleteToken(String id) async {
+    state = state.copyWith(isLoading: true, errorMessage: null);
+    try {
+      await ref.read(appointmentRepositoryProvider).deleteToken(id);
+      
+      // Update local state by removing the deleted token
+      final updatedTokens = state.tokens.where((t) => t.id != id).toList();
+      
+      state = state.copyWith(
+        tokens: updatedTokens,
+        isLoading: false,
+      );
+      return true;
+    } catch (e) {
+      state = state.copyWith(
+        isLoading: false,
+        errorMessage: e.toString(),
+      );
+      return false;
+    }
+  }
 }

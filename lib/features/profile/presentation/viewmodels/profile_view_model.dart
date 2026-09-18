@@ -1,3 +1,4 @@
+import 'package:clinic_q/features/home/presentation/home_providers.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../auth/domain/entities/user_profile.dart';
 import '../../../auth/presentation/auth_providers.dart';
@@ -106,5 +107,7 @@ class ProfileViewModel extends Notifier<ProfileState> {
     await ref.read(authRepositoryProvider).signOut();
     if (!ref.mounted) return;
     ref.read(hasProfileProvider.notifier).setState(null);
+    state = const ProfileState();
+    ref.invalidate(homeViewModelProvider);
   }
 }

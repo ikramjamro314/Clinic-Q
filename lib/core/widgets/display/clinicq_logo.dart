@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../theme/clinic_q_colors.dart';
+import '../../../app/theme/clinic_q_colors.dart';
 
 class ClinicQLogo extends StatelessWidget {
   const ClinicQLogo({
@@ -71,7 +71,8 @@ class ClinicQLogo extends StatelessWidget {
     );
 
     if (showText) {
-      final resolvedTextColor = textColor ??
+      final resolvedTextColor =
+          textColor ??
           (isDark ? ClinicQColors.lightTeal : ClinicQColors.primaryTeal);
       return Column(
         mainAxisSize: MainAxisSize.min,

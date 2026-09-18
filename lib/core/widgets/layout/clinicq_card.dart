@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../theme/clinic_q_colors.dart';
+import '../../../app/theme/clinic_q_colors.dart';
 
 class ClinicQCard extends StatelessWidget {
   const ClinicQCard({
@@ -24,14 +24,16 @@ class ClinicQCard extends StatelessWidget {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    final defaultBorder = border ??
+    final defaultBorder =
+        border ??
         Border.all(
           color: isDark
               ? ClinicQColors.darkSurfaceVariant
               : theme.colorScheme.outlineVariant,
         );
 
-    final defaultBoxShadow = boxShadow ??
+    final defaultBoxShadow =
+        boxShadow ??
         const [
           BoxShadow(
             color: ClinicQColors.cardShadow,
@@ -43,7 +45,8 @@ class ClinicQCard extends StatelessWidget {
     return Container(
       padding: padding,
       decoration: BoxDecoration(
-        color: backgroundColor ??
+        color:
+            backgroundColor ??
             (isDark ? ClinicQColors.darkSurface : theme.colorScheme.surface),
         borderRadius: BorderRadius.circular(borderRadius),
         border: defaultBorder,

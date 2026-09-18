@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../app/app_routes.dart';
-import '../../../../core/theme/clinic_q_colors.dart';
+import '../../../../app/theme/clinic_q_colors.dart';
 import '../../../../core/widgets/feedback/skeleton_box.dart';
 import '../../../doctor/presentation/widgets/all_doctor_card.dart';
 import '../../../clinic/presentation/widgets/clinic_list_card.dart';
@@ -278,10 +278,11 @@ class _TabPill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final textStyle = (theme.textTheme.bodyMedium ?? const TextStyle()).copyWith(
-      fontWeight: FontWeight.bold,
-      color: isActive ? Colors.white : ClinicQColors.textSecondary,
-    );
+    final textStyle = (theme.textTheme.bodyMedium ?? const TextStyle())
+        .copyWith(
+          fontWeight: FontWeight.bold,
+          color: isActive ? Colors.white : ClinicQColors.textSecondary,
+        );
 
     return GestureDetector(
       onTap: onTap,

@@ -1,14 +1,11 @@
 import 'package:flutter/material.dart';
-import '../../../../core/theme/clinic_q_colors.dart';
+import '../../../../app/theme/clinic_q_colors.dart';
 import '../../domain/entities/doctor_entity.dart';
 
 class DoctorProfileHeader extends StatelessWidget {
   final DoctorEntity doctor;
 
-  const DoctorProfileHeader({
-    super.key,
-    required this.doctor,
-  });
+  const DoctorProfileHeader({super.key, required this.doctor});
 
   @override
   Widget build(BuildContext context) {
@@ -29,16 +26,22 @@ class DoctorProfileHeader extends StatelessWidget {
                     width: 100,
                     height: 100,
                     color: ClinicQColors.dividerLight,
-                    child: const Icon(Icons.person,
-                        color: ClinicQColors.iconSecondary, size: 40),
+                    child: const Icon(
+                      Icons.person,
+                      color: ClinicQColors.iconSecondary,
+                      size: 40,
+                    ),
                   ),
                 )
               : Container(
                   width: 100,
                   height: 100,
                   color: ClinicQColors.dividerLight,
-                  child: const Icon(Icons.person,
-                      color: ClinicQColors.iconSecondary, size: 40),
+                  child: const Icon(
+                    Icons.person,
+                    color: ClinicQColors.iconSecondary,
+                    size: 40,
+                  ),
                 ),
         ),
         const SizedBox(width: 20),
@@ -63,20 +66,35 @@ class DoctorProfileHeader extends StatelessWidget {
               const SizedBox(height: 8),
               Row(
                 children: [
-                  const Icon(Icons.star,
-                      color: ClinicQColors.starFilled, size: 16),
+                  const Icon(
+                    Icons.star,
+                    color: ClinicQColors.starFilled,
+                    size: 16,
+                  ),
                   const SizedBox(width: 4),
-                  const Icon(Icons.star,
-                      color: ClinicQColors.starFilled, size: 16),
+                  const Icon(
+                    Icons.star,
+                    color: ClinicQColors.starFilled,
+                    size: 16,
+                  ),
                   const SizedBox(width: 4),
-                  const Icon(Icons.star,
-                      color: ClinicQColors.starFilled, size: 16),
+                  const Icon(
+                    Icons.star,
+                    color: ClinicQColors.starFilled,
+                    size: 16,
+                  ),
                   const SizedBox(width: 4),
-                  const Icon(Icons.star,
-                      color: ClinicQColors.starFilled, size: 16),
+                  const Icon(
+                    Icons.star,
+                    color: ClinicQColors.starFilled,
+                    size: 16,
+                  ),
                   const SizedBox(width: 4),
-                  const Icon(Icons.star_half,
-                      color: ClinicQColors.starFilled, size: 16),
+                  const Icon(
+                    Icons.star_half,
+                    color: ClinicQColors.starFilled,
+                    size: 16,
+                  ),
                   const SizedBox(width: 8),
                   Text(
                     doctor.rating.toString(),

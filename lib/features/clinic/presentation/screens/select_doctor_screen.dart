@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../../core/theme/clinic_q_colors.dart';
+import '../../../../app/theme/clinic_q_colors.dart';
 import '../../../../core/widgets/buttons/clinicq_button.dart';
 import '../../../../core/widgets/feedback/clinicq_loader.dart';
 import '../../../../core/widgets/feedback/clinicq_error_widget.dart';
@@ -89,7 +89,7 @@ class SelectDoctorScreen extends ConsumerWidget {
               onPressed: selectState.selectedDoctorId != null
                   ? () {
                       context.push(
-                        '/booking/token-info?doctorId=${selectState.selectedDoctorId}&clinicId=$clinicId',
+                        '/booking/confirm?doctorId=${selectState.selectedDoctorId}&clinicId=$clinicId',
                       );
                     }
                   : null,

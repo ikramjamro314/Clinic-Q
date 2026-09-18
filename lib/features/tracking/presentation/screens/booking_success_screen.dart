@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../../core/theme/clinic_q_colors.dart';
+import '../../../../app/theme/clinic_q_colors.dart';
 import '../../../../core/widgets/buttons/clinicq_button.dart';
 import '../../../doctor/domain/entities/doctor_entity.dart';
 import '../../domain/entities/token.dart';

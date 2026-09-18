@@ -2,11 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../app/app_routes.dart';
-import '../../../../core/theme/clinic_q_colors.dart';
+import '../../../../app/theme/clinic_q_colors.dart';
 import '../../../../core/widgets/feedback/clinicq_error_widget.dart';
 import '../../../../core/widgets/feedback/clinicq_loader.dart';
 import '../../../doctor/domain/entities/doctor_entity.dart';
 import '../../../doctor/presentation/doctor_providers.dart';
+import '../../../auth/presentation/auth_providers.dart';
 import '../../domain/entities/token.dart';
 import '../providers.dart';
 
@@ -14,15 +15,20 @@ class AppointmentHistoryScreen extends ConsumerStatefulWidget {
   const AppointmentHistoryScreen({super.key});
 
   @override
-  ConsumerState<AppointmentHistoryScreen> createState() => _AppointmentHistoryScreenState();
+  ConsumerState<AppointmentHistoryScreen> createState() =>
+      _AppointmentHistoryScreenState();
 }
 
-class _AppointmentHistoryScreenState extends ConsumerState<AppointmentHistoryScreen> {
+class _AppointmentHistoryScreenState
+    extends ConsumerState<AppointmentHistoryScreen> {
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(appointmentViewModelProvider.notifier).fetchTokens();
+      final currentUser = ref.read(authRepositoryProvider).getCurrentUser();
+      ref
+          .read(appointmentViewModelProvider.notifier)
+          .fetchTokens(userId: currentUser?.id);
     });
   }
 
@@ -30,7 +36,20 @@ class _AppointmentHistoryScreenState extends ConsumerState<AppointmentHistoryScr
     if (dateStr == null || dateStr.isEmpty) return 'Today';
     try {
       final dt = DateTime.parse(dateStr).toLocal();
-      final months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      final months = [
+        'Jan',
+        'Feb',
+        'Mar',
+        'Apr',
+        'May',
+        'Jun',
+        'Jul',
+        'Aug',
+        'Sep',
+        'Oct',
+        'Nov',
+        'Dec',
+      ];
       final padMins = dt.minute.toString().padLeft(2, '0');
       final period = dt.hour >= 12 ? 'PM' : 'AM';
       final hour = dt.hour % 12 == 0 ? 12 : dt.hour % 12;
@@ -43,6 +62,13 @@ class _AppointmentHistoryScreenState extends ConsumerState<AppointmentHistoryScr
   @override
   Widget build(BuildContext context) {
     final appointmentState = ref.watch(appointmentViewModelProvider);
+    final currentUser = ref.watch(authRepositoryProvider).getCurrentUser();
+    final userTokens = (currentUser != null
+        ? appointmentState.tokens
+            .where((t) => t.userId == currentUser.id)
+            .toList()
+        : appointmentState.tokens)
+      ..sort((a, b) => (b.createdAt ?? '').compareTo(a.createdAt ?? ''));
 
     return Scaffold(
       backgroundColor: ClinicQColors.appBackground,
@@ -63,23 +89,27 @@ class _AppointmentHistoryScreenState extends ConsumerState<AppointmentHistoryScr
         ),
       ),
       body: RefreshIndicator(
-        onRefresh: () => ref.read(appointmentViewModelProvider.notifier).fetchTokens(),
+        onRefresh: () => ref
+            .read(appointmentViewModelProvider.notifier)
+            .fetchTokens(userId: currentUser?.id),
         color: ClinicQColors.primaryTeal,
-        child: appointmentState.isLoading && appointmentState.tokens.isEmpty
+        child: appointmentState.isLoading && userTokens.isEmpty
             ? const Center(child: ClinicQLoader())
             : appointmentState.errorMessage != null
-                ? Center(
-                    child: SingleChildScrollView(
-                      physics: const AlwaysScrollableScrollPhysics(),
-                      child: ClinicQErrorWidget(
-                        message: appointmentState.errorMessage!,
-                        onRetry: () => ref.read(appointmentViewModelProvider.notifier).fetchTokens(),
-                      ),
-                    ),
-                  )
-                : appointmentState.tokens.isEmpty
-                    ? _buildEmptyState()
-                    : _buildAppointmentList(appointmentState.tokens),
+            ? Center(
+                child: SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  child: ClinicQErrorWidget(
+                    message: appointmentState.errorMessage!,
+                    onRetry: () => ref
+                        .read(appointmentViewModelProvider.notifier)
+                        .fetchTokens(userId: currentUser?.id),
+                  ),
+                ),
+              )
+            : userTokens.isEmpty
+            ? _buildEmptyState()
+            : _buildAppointmentList(userTokens),
       ),
     );
   }
@@ -136,7 +166,10 @@ class _AppointmentHistoryScreenState extends ConsumerState<AppointmentHistoryScr
       separatorBuilder: (context, index) => const SizedBox(height: 16),
       itemBuilder: (context, index) {
         final token = tokens[index];
-        return _AppointmentHistoryCard(token: token, formattedDate: _formatDateTime(token.createdAt));
+        return _AppointmentHistoryCard(
+          token: token,
+          formattedDate: _formatDateTime(token.createdAt),
+        );
       },
     );
   }
@@ -153,7 +186,9 @@ class _AppointmentHistoryCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final doctorAsync = ref.watch(doctorRepositoryProvider).getDoctorById(token.doctorId);
+    final doctorAsync = ref
+        .watch(doctorRepositoryProvider)
+        .getDoctorById(token.doctorId);
 
     final isCompleted = token.status == 'completed';
     final isCancelled = token.status == 'cancelled';
@@ -265,7 +300,10 @@ class _AppointmentHistoryCard extends ConsumerWidget {
                           ),
                         ),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 6,
+                          ),
                           decoration: BoxDecoration(
                             color: badgeColor,
                             borderRadius: BorderRadius.circular(12),
@@ -322,7 +360,9 @@ class _AppointmentHistoryCard extends ConsumerWidget {
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              token.tokenNumber != null ? '#${token.tokenNumber}' : '--',
+                              token.tokenNumber != null
+                                  ? '#${token.tokenNumber}'
+                                  : '--',
                               style: const TextStyle(
                                 color: ClinicQColors.primaryTeal,
                                 fontSize: 16,
@@ -345,7 +385,11 @@ class _AppointmentHistoryCard extends ConsumerWidget {
                         child: const Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(Icons.radar_rounded, color: ClinicQColors.primaryTeal, size: 16),
+                            Icon(
+                              Icons.radar_rounded,
+                              color: ClinicQColors.primaryTeal,
+                              size: 16,
+                            ),
                             SizedBox(width: 6),
                             Text(
                               'Tap to Live Track Queue',

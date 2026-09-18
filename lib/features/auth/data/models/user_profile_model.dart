@@ -27,7 +27,9 @@ class UserProfileModel extends UserProfile {
       createdAt: json['createdAt'] as String?,
       updatedAt: json['updatedAt'] as String?,
       gender: json['gender'] as String?,
-      dateOfBirth: json['dateOfBirth'] as String?,
+      dateOfBirth: json['dateOfBirth'] as String? ??
+          json['dob'] as String? ??
+          json['date_of_birth'] as String?,
     );
   }
 

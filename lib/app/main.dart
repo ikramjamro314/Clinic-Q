@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in/google_sign_in.dart' show GoogleSignIn;
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../core/theme/clinic_q_theme.dart';
+import 'theme/clinic_q_theme.dart';
 import '../core/utils/app_initializer.dart';
 import 'app_router.dart';
 

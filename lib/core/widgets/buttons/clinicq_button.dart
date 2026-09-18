@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../theme/clinic_q_colors.dart';
+import '../../../app/theme/clinic_q_colors.dart';
 
 class ClinicQButton extends StatelessWidget {
   const ClinicQButton({
@@ -69,10 +69,7 @@ class ClinicQButton extends StatelessWidget {
           ? SizedBox(
               height: 24,
               width: 24,
-              child: CircularProgressIndicator(
-                color: fg,
-                strokeWidth: 2.5,
-              ),
+              child: CircularProgressIndicator(color: fg, strokeWidth: 2.5),
             )
           : Row(
               mainAxisSize: MainAxisSize.min,

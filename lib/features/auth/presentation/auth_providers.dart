@@ -33,7 +33,8 @@ final authRepositoryProvider = Provider<AuthRepository>((ref) {
   final supabaseService = ref.watch(supabaseAuthServiceProvider);
   final dio = ref.watch(dioProvider);
   final localDataSource = ref.watch(profileLocalDataSourceProvider);
-  return SupabaseAuthRepositoryImpl(supabaseService, dio, localDataSource);
+  final db = ref.watch(databaseProvider);
+  return SupabaseAuthRepositoryImpl(supabaseService, dio, localDataSource, db);
 });
 
 final authStateChangesProvider = StreamProvider<sb.AuthState>((ref) {

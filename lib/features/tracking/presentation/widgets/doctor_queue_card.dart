@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../../core/theme/clinic_q_colors.dart';
+import '../../../../app/theme/clinic_q_colors.dart';
 import '../../../doctor/domain/entities/doctor_entity.dart';
 
 class DoctorQueueCard extends StatelessWidget {
@@ -160,7 +160,10 @@ class DoctorQueueCard extends StatelessWidget {
                   onPressed: onChangeTap,
                   style: TextButton.styleFrom(
                     backgroundColor: Colors.white.withOpacity(0.2),
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -209,7 +212,10 @@ class DoctorQueueCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.white.withOpacity(0.2),
                       borderRadius: BorderRadius.circular(20),
@@ -241,10 +247,7 @@ class DoctorQueueCard extends StatelessWidget {
                   if (nowServingNumber != null) ...[
                     const Text(
                       'Now serving',
-                      style: TextStyle(
-                        color: Colors.white70,
-                        fontSize: 11,
-                      ),
+                      style: TextStyle(color: Colors.white70, fontSize: 11),
                     ),
                     Text(
                       '#$nowServingNumber',

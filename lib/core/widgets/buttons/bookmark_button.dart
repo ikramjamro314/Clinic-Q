@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../theme/clinic_q_colors.dart';
+import '../../../app/theme/clinic_q_colors.dart';
 import '../../../features/profile/data/local/interest_local_data_source.dart';
 
 class BookmarkButton extends ConsumerStatefulWidget {

@@ -4,8 +4,11 @@ import '../domain/repositories/ratings_repository.dart';
 import 'viewmodels/reviews_state.dart';
 import 'viewmodels/reviews_view_model.dart';
 
+import '../../../../core/network/dio_client.dart';
+
 final ratingsRepositoryProvider = Provider<RatingsRepository>((ref) {
-  return RatingsRepositoryImpl();
+  final dio = ref.watch(dioProvider);
+  return RatingsRepositoryImpl(dio);
 });
 
 final reviewsViewModelProvider =

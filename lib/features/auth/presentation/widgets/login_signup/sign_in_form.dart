@@ -1,3 +1,5 @@
+import 'package:clinic_q/features/profile/presentation/profile_providers.dart';
+import 'package:clinic_q/features/home/presentation/home_providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -56,7 +58,9 @@ class _SignInFormState extends ConsumerState<SignInForm> {
         content: Row(
           children: [
             Icon(
-              isError ? Icons.error_outline_rounded : Icons.check_circle_outline_rounded,
+              isError
+                  ? Icons.error_outline_rounded
+                  : Icons.check_circle_outline_rounded,
               color: Colors.white,
               size: 20,
             ),
@@ -73,11 +77,11 @@ class _SignInFormState extends ConsumerState<SignInForm> {
             ),
           ],
         ),
-        backgroundColor: isError ? const Color(0xFFEF4444) : const Color(0xFF10B981),
+        backgroundColor: isError
+            ? const Color(0xFFEF4444)
+            : const Color(0xFF10B981),
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         margin: const EdgeInsets.all(16),
         duration: const Duration(seconds: 4),
       ),
@@ -92,6 +96,10 @@ class _SignInFormState extends ConsumerState<SignInForm> {
       // Clear sensitive fields before navigating away
       _emailController.clear();
       _passwordController.clear();
+
+      ref.invalidate(profileViewModelProvider);
+      ref.invalidate(homeViewModelProvider);
+      ref.read(hasProfileProvider.notifier).setState(null);
 
       context.go(AppRoutes.home);
     } else {

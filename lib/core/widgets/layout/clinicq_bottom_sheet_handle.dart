@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../theme/clinic_q_colors.dart';
+import '../../../app/theme/clinic_q_colors.dart';
 
 class ClinicQBottomSheetHandle extends StatelessWidget {
   const ClinicQBottomSheetHandle({
@@ -20,8 +20,11 @@ class ClinicQBottomSheetHandle extends StatelessWidget {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    final resolvedColor = color ??
-        (isDark ? ClinicQColors.darkSurfaceVariant : ClinicQColors.dividerMedium);
+    final resolvedColor =
+        color ??
+        (isDark
+            ? ClinicQColors.darkSurfaceVariant
+            : ClinicQColors.dividerMedium);
 
     return Center(
       child: Container(

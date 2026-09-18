@@ -8,7 +8,9 @@ import '../../../../core/error/app_exception.dart';
 import '../../../../core/error/exception_mapper.dart';
 import '../../../../core/local/app_database.dart';
 import '../../domain/entities/tracking_snapshot.dart';
+import '../../domain/entities/queue_preview.dart';
 import '../../domain/repositories/tracking_repository.dart';
+import '../../domain/repositories/appointment_repository.dart';
 import '../local/tracking_local_data_source.dart';
 import '../services/tracking_api_service.dart';
 import '../models/tracking_snapshot_model.dart';
@@ -16,27 +18,38 @@ import '../models/tracking_snapshot_model.dart';
 class TrackingRepositoryImpl implements TrackingRepository {
   final TrackingApiService _apiService;
   final TrackingLocalDataSource _localDataSource;
+  final AppointmentRepository _appointmentRepo;
 
-  TrackingRepositoryImpl(this._apiService, this._localDataSource);
+  TrackingRepositoryImpl(
+    this._apiService,
+    this._localDataSource,
+    this._appointmentRepo,
+  );
 
   @override
   Stream<TrackingSnapshot> getLiveTrackingStream(String tokenId) {
     final controller = StreamController<TrackingSnapshot>();
     IO.Socket? socket;
+    TrackingSnapshot? currentSnapshot;
 
     Future<void> connect() async {
       try {
+        // Fetch authoritative latest data from REST API immediately
+        try {
+          currentSnapshot = await getLiveTracking(tokenId);
+          if (!controller.isClosed && currentSnapshot != null) {
+            debugPrint('[TrackingWS] Emitting initial REST API snapshot');
+            controller.add(currentSnapshot!);
+          }
+        } catch (e) {
+          debugPrint('[TrackingWS] Initial REST API fetch failed: $e');
+          if (!controller.isClosed) {
+            controller.addError(e);
+          }
+        }
+
         final session = Supabase.instance.client.auth.currentSession;
         final token = session?.accessToken;
-
-        // Fetch doctor ID from cache or API fallback
-        String? doctorId = await _localDataSource.getDoctorIdByTokenId(tokenId);
-        if (doctorId == null) {
-          debugPrint(
-            '[TrackingWS] doctorId not in database cache, fetching from API fallback',
-          );
-          doctorId = await _apiService.getDoctorIdForToken(tokenId);
-        }
 
         final rawSocketUrl =
             dotenv.env['SOCKET_URL'] ?? 'https://smart-q-drqx-seven.vercel.app';
@@ -55,7 +68,6 @@ class TrackingRepositoryImpl implements TrackingRepository {
         // Explicitly append the default ports to bypass socket_io_client's :0 parser bug
         final host = uri.host;
         final scheme = uri.scheme;
-        final port = uri.port;
 
         // If the URL has no explicit port, format it to include the default port
         if (!socketUrl.substring(scheme.length + 3).contains(':')) {
@@ -83,20 +95,42 @@ class TrackingRepositoryImpl implements TrackingRepository {
               .build(),
         );
 
-        socket!.onConnect((_) {
-          debugPrint('[TrackingWS] Connected to WebSocket server');
-          socket!.emit('join:token', tokenId);
-          if (doctorId != null && doctorId.isNotEmpty) {
-            debugPrint('[TrackingWS] Joining doctor room: $doctorId');
-            socket!.emit('join:doctor', doctorId);
-          }
-        });
-
         final onDataReceived = (data) async {
           debugPrint('[TrackingWS] Received real-time update event: $data');
           try {
-            // Fetch the authoritative latest tracking state from the API
+            if (data is Map<String, dynamic>) {
+              // Extract currentTokenNumber from the WebSocket event payload
+              final rawCurrentToken = data['currentTokenNumber'] ?? data['currentlyServing'] ?? data['currentToken'];
+              
+              if (rawCurrentToken != null && currentSnapshot != null) {
+                final newCurrentToken = int.tryParse(rawCurrentToken.toString()) ?? 0;
+                
+                // Recalculate patient ahead and ETA on the fly
+                int newPatientsAhead = currentSnapshot!.yourTokenNumber - newCurrentToken;
+                if (newPatientsAhead < 0) newPatientsAhead = 0;
+                int newEstWait = newPatientsAhead * 10; // 10 minutes per patient ahead
+
+                currentSnapshot = currentSnapshot!.copyWith(
+                  currentTokenNumber: newCurrentToken,
+                  patientsAheadCount: newPatientsAhead,
+                  estimatedWaitMinutes: newEstWait,
+                  lastSyncedAt: DateTime.now(),
+                );
+
+                debugPrint(
+                  '[TrackingWS] Reactive Socket Update — currentToken=$newCurrentToken, ahead=$newPatientsAhead, estWait=${newEstWait}min',
+                );
+
+                if (!controller.isClosed) {
+                  controller.add(currentSnapshot!);
+                }
+                return;
+              }
+            }
+
+            // Fallback: Fetch the authoritative latest tracking state from the API
             final snapshot = await getLiveTracking(tokenId);
+            currentSnapshot = snapshot;
             if (!controller.isClosed) {
               controller.add(snapshot);
             }
@@ -104,55 +138,55 @@ class TrackingRepositoryImpl implements TrackingRepository {
             debugPrint(
               '[TrackingWS] Error updating snapshot on real-time event: $e',
             );
+            if (!controller.isClosed) {
+              controller.addError(e);
+            }
           }
         };
+
+        socket!.onConnect((_) async {
+          debugPrint('[TrackingWS] Connected to WebSocket server');
+          socket!.emit('join:token', tokenId);
+          
+          // Resolve doctorId in the background so it doesn't block initial connection & emit
+          _localDataSource.getDoctorIdByTokenId(tokenId).then((cachedDoctorId) async {
+            String? docId = cachedDoctorId;
+            if (docId == null) {
+              docId = await _apiService.getDoctorIdForToken(tokenId);
+            }
+            if (docId != null && docId.isNotEmpty && socket != null && socket!.connected) {
+              debugPrint('[TrackingWS] Joining doctor room: $docId');
+              socket!.emit('join:doctor', docId);
+            }
+          }).catchError((e) {
+            debugPrint('[TrackingWS] Background doctorId resolve failed: $e');
+          });
+
+          await onDataReceived('initial');
+        });
 
         // Align backend event listeners
         socket!.on('token:created', onDataReceived);
         socket!.on('queue:updated', onDataReceived);
         socket!.on('ETA_UPDATED', onDataReceived);
 
-        socket!.onDisconnect((_) async {
+        socket!.onDisconnect((_) {
           debugPrint('[TrackingWS] Disconnected from server');
-          final cached = await _localDataSource.getCachedSnapshot(tokenId);
-          if (cached != null && !controller.isClosed) {
-            controller.add(
-              _fromDriftData(cached).copyWith(isFromCache: true, isStale: true),
+        });
+
+        socket!.onConnectError((err) {
+          debugPrint('[TrackingWS] Connect Error: $err');
+          if (!controller.isClosed) {
+            controller.addError(
+              NetworkException('WebSocket connection error: $err'),
             );
           }
         });
 
-        socket!.onConnectError((err) async {
-          debugPrint('[TrackingWS] Connect Error: $err');
-          final cached = await _localDataSource.getCachedSnapshot(tokenId);
-          if (!controller.isClosed) {
-            if (cached != null) {
-              controller.add(
-                _fromDriftData(
-                  cached,
-                ).copyWith(isFromCache: true, isStale: true),
-              );
-            } else {
-              controller.addError(
-                NetworkException('WebSocket connection error: $err'),
-              );
-            }
-          }
-        });
-
-        socket!.onError((err) async {
+        socket!.onError((err) {
           debugPrint('[TrackingWS] Error: $err');
-          final cached = await _localDataSource.getCachedSnapshot(tokenId);
           if (!controller.isClosed) {
-            if (cached != null) {
-              controller.add(
-                _fromDriftData(
-                  cached,
-                ).copyWith(isFromCache: true, isStale: true),
-              );
-            } else {
-              controller.addError(UnknownException('WebSocket error: $err'));
-            }
+            controller.addError(UnknownException('WebSocket error: $err'));
           }
         });
       } catch (e) {
@@ -179,33 +213,15 @@ class TrackingRepositoryImpl implements TrackingRepository {
 
   @override
   Future<TrackingSnapshot> getLiveTracking(String tokenId) async {
-    final cached = await _localDataSource.getCachedSnapshot(tokenId);
-
     try {
       final networkSnapshot = await _apiService.getLiveTracking(tokenId);
-
-      // Overwrite cache for this token
-      await _localDataSource.upsertSnapshot(_toDriftCompanion(networkSnapshot));
-
       debugPrint(
         '[Tracking] LIVE update — currentToken=${networkSnapshot.currentTokenNumber}, yourToken=${networkSnapshot.yourTokenNumber}, aheadOfYou=${networkSnapshot.patientsAheadCount}, eta=${networkSnapshot.estimatedWaitMinutes}min',
       );
       return networkSnapshot;
     } catch (error) {
       final appEx = mapErrorToException(error);
-
-      if (cached != null) {
-        debugPrint(
-          '[Tracking] NETWORK failed — ${appEx.message} — showing CACHED snapshot from ${cached.lastSyncedAt}',
-        );
-        return _fromDriftData(
-          cached,
-        ).copyWith(isFromCache: true, isStale: true);
-      }
-
-      debugPrint(
-        '[Tracking] No cached snapshot available — showing error state',
-      );
+      debugPrint('[Tracking] Network request failed: ${appEx.message}');
       throw appEx;
     }
   }
@@ -236,5 +252,109 @@ class TrackingRepositoryImpl implements TrackingRepository {
       isFromCache: r.isFromCache,
       isStale: r.isStale,
     );
+  }
+
+  @override
+  Stream<QueuePreview> getDoctorQueueStream(String doctorId, String clinicId) {
+    final controller = StreamController<QueuePreview>();
+    IO.Socket? socket;
+
+    Future<void> connect() async {
+      try {
+        final session = Supabase.instance.client.auth.currentSession;
+        final token = session?.accessToken;
+
+        final rawSocketUrl =
+            dotenv.env['SOCKET_URL'] ?? 'https://smart-q-drqx-seven.vercel.app';
+        var socketUrl = rawSocketUrl.trim();
+        if (socketUrl.endsWith('/')) {
+          socketUrl = socketUrl.substring(0, socketUrl.length - 1);
+        }
+
+        final uri = Uri.parse(socketUrl);
+        if (socketUrl.contains(':0')) {
+          socketUrl = socketUrl.replaceAll(':0', '');
+        }
+
+        final host = uri.host;
+        final scheme = uri.scheme;
+
+        if (!socketUrl.substring(scheme.length + 3).contains(':')) {
+          if (scheme == 'https') {
+            socketUrl = '$scheme://$host:443';
+          } else if (scheme == 'http') {
+            socketUrl = '$scheme://$host:80';
+          }
+        }
+
+        socket = IO.io(
+          socketUrl,
+          IO.OptionBuilder()
+              .setTransports(['websocket'])
+              .setAuth({'token': token})
+              .setExtraHeaders({'Authorization': 'Bearer $token'})
+              .enableAutoConnect()
+              .setReconnectionDelay(2000)
+              .setReconnectionDelayMax(10000)
+              .setReconnectionAttempts(10)
+              .build(),
+        );
+
+        socket!.onConnect((_) {
+          debugPrint('[DoctorQueueWS] Connected to WebSocket server');
+          socket!.emit('join:doctor', doctorId);
+          socket!.emit('join:clinic', clinicId);
+        });
+
+        final onDataReceived = (data) async {
+          debugPrint('[DoctorQueueWS] Received real-time update event: $data');
+          try {
+            final preview = await _appointmentRepo.getQueuePreview(
+              doctorId: doctorId,
+              clinicId: clinicId,
+            );
+            if (!controller.isClosed) {
+              controller.add(preview);
+            }
+          } catch (e) {
+            debugPrint('[DoctorQueueWS] Error fetching live queue preview: $e');
+          }
+        };
+
+        // Trigger initial fetch when connected
+        await onDataReceived('initial');
+
+        socket!.on('queue:updated', onDataReceived);
+        socket!.on('token:created', onDataReceived);
+        socket!.on('ETA_UPDATED', onDataReceived);
+
+        socket!.onDisconnect((_) {
+          debugPrint('[DoctorQueueWS] Disconnected from server');
+        });
+
+        socket!.onConnectError((err) {
+          debugPrint('[DoctorQueueWS] Connect Error: $err');
+        });
+
+        socket!.onError((err) {
+          debugPrint('[DoctorQueueWS] Error: $err');
+        });
+      } catch (e) {
+        debugPrint('[DoctorQueueWS] Connection setup failed: $e');
+      }
+    }
+
+    connect();
+
+    controller.onCancel = () {
+      debugPrint(
+        '[DoctorQueueWS] Subscription cancelled, cleaning up listeners',
+      );
+      socket?.clearListeners();
+      socket?.disconnect();
+      socket?.dispose();
+    };
+
+    return controller.stream;
   }
 }

@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../app/app_routes.dart';
-import '../../../../core/theme/clinic_q_colors.dart';
+import '../../../../app/theme/clinic_q_colors.dart';
 import '../../../../core/widgets/feedback/clinicq_loader.dart';
 import '../../../../core/widgets/feedback/clinicq_error_widget.dart';
 import '../../../../core/widgets/feedback/skeleton_box.dart';
@@ -31,7 +31,11 @@ class ClinicViewScreen extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const SkeletonBox(width: double.infinity, height: 250, borderRadius: 0),
+              const SkeletonBox(
+                width: double.infinity,
+                height: 250,
+                borderRadius: 0,
+              ),
               Padding(
                 padding: const EdgeInsets.all(20.0),
                 child: Column(
@@ -43,7 +47,10 @@ class ClinicViewScreen extends ConsumerWidget {
                     const SizedBox(height: 24),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: List.generate(3, (index) => const SkeletonBox(width: 90, height: 36)),
+                      children: List.generate(
+                        3,
+                        (index) => const SkeletonBox(width: 90, height: 36),
+                      ),
                     ),
                     const SizedBox(height: 28),
                     const SkeletonBox(width: 100, height: 18),
@@ -104,10 +111,7 @@ class ClinicViewScreen extends ConsumerWidget {
                 actions: [
                   // Bookmark Button
                   Padding(
-                    padding: const EdgeInsets.only(
-                      top: 8.0,
-                      bottom: 8.0,
-                    ),
+                    padding: const EdgeInsets.only(top: 8.0, bottom: 8.0),
                     child: CircleAvatar(
                       backgroundColor: Colors.white,
                       child: BookmarkButton(

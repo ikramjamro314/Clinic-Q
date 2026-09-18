@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../theme/clinic_q_colors.dart';
+import '../../../app/theme/clinic_q_colors.dart';
 
 class ClinicQPageIndicator extends StatelessWidget {
   const ClinicQPageIndicator({
@@ -29,8 +29,11 @@ class ClinicQPageIndicator extends StatelessWidget {
     final isDark = theme.brightness == Brightness.dark;
 
     final resolvedActiveColor = activeColor ?? ClinicQColors.primaryTeal;
-    final resolvedInactiveColor = inactiveColor ??
-        (isDark ? ClinicQColors.darkSurfaceVariant : ClinicQColors.dividerStrong);
+    final resolvedInactiveColor =
+        inactiveColor ??
+        (isDark
+            ? ClinicQColors.darkSurfaceVariant
+            : ClinicQColors.dividerStrong);
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,

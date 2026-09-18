@@ -1,9 +1,10 @@
+import 'package:clinic_q/features/tracking/presentation/screens/tracking_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../app/app_routes.dart';
-import '../../../../core/theme/clinic_q_colors.dart';
+import '../../../../app/theme/clinic_q_colors.dart';
 import '../../../../core/widgets/inputs/clinicq_text_field.dart';
 import '../../../../core/widgets/feedback/clinicq_loader.dart';
 import '../../../../core/widgets/feedback/clinicq_error_widget.dart';
@@ -56,7 +57,9 @@ class _ClinicScreenState extends ConsumerState<ClinicScreen> {
           if (clinicState.isFromCache)
             OfflineBanner(message: clinicState.errorMessage),
           Expanded(
-            child: clinicState.isLoading && clinicState.clinics.isEmpty
+            child: clinicState.isLoading &&
+                    clinicState.clinics.isEmpty &&
+                    _searchController.text.isEmpty
                 ? Padding(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 20.0,
@@ -64,10 +67,13 @@ class _ClinicScreenState extends ConsumerState<ClinicScreen> {
                     ),
                     child: ListView.builder(
                       itemCount: 3,
-                      itemBuilder: (context, index) => const ClinicCardSkeleton(),
+                      itemBuilder: (context, index) =>
+                          const ClinicCardSkeleton(),
                     ),
                   )
-                : clinicState.errorMessage != null && clinicState.clinics.isEmpty
+                : clinicState.errorMessage != null &&
+                        clinicState.clinics.isEmpty &&
+                        _searchController.text.isEmpty
                     ? Center(
                         child: ClinicQErrorWidget(
                           message: clinicState.errorMessage!,
@@ -90,7 +96,7 @@ class _ClinicScreenState extends ConsumerState<ClinicScreen> {
                                 // Search field
                                 ClinicQTextField(
                                   controller: _searchController,
-                                  hintText: 'Search',
+                                  hintText: 'Search clinics...',
                                   prefixIcon: Icons.search_rounded,
                                   isPill: false,
                                   borderRadius: 16,
@@ -107,23 +113,75 @@ class _ClinicScreenState extends ConsumerState<ClinicScreen> {
 
                                 const SizedBox(height: 24),
 
-                                // Main clinics list
-                                ListView.builder(
-                                  shrinkWrap: true,
-                                  physics: const NeverScrollableScrollPhysics(),
-                                  itemCount: clinicState.clinics.length,
-                                  itemBuilder: (context, index) {
-                                    final clinic = clinicState.clinics[index];
-                                    return ClinicListCard(
-                                      clinic: clinic,
-                                      onTap: () {
-                                        context.push(
-                                          AppRoutes.clinicViewWithId(clinicId: clinic.id),
-                                        );
-                                      },
-                                    );
-                                  },
-                                ),
+                                // Main clinics list / Empty state
+                                if (clinicState.isLoading &&
+                                    clinicState.clinics.isEmpty)
+                                  ListView.builder(
+                                    shrinkWrap: true,
+                                    physics:
+                                        const NeverScrollableScrollPhysics(),
+                                    itemCount: 3,
+                                    itemBuilder: (context, index) =>
+                                        const ClinicCardSkeleton(),
+                                  )
+                                else if (clinicState.clinics.isEmpty)
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 40.0,
+                                    ),
+                                    child: Center(
+                                      child: Column(
+                                        children: [
+                                          Icon(
+                                            Icons.search_off_rounded,
+                                            size: 48,
+                                            color: ClinicQColors.textSecondary
+                                                .withOpacity(0.5),
+                                          ),
+                                          const SizedBox(height: 12),
+                                          const Text(
+                                            'No clinics found',
+                                            style: TextStyle(
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.w600,
+                                              color:
+                                                  ClinicQColors.textSecondary,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            'Try searching with a different keyword',
+                                            style: TextStyle(
+                                              fontSize: 13,
+                                              color: ClinicQColors.textSecondary
+                                                  .withOpacity(0.8),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  )
+                                else
+                                  ListView.builder(
+                                    shrinkWrap: true,
+                                    physics:
+                                        const NeverScrollableScrollPhysics(),
+                                    itemCount: clinicState.clinics.length,
+                                    itemBuilder: (context, index) {
+                                      final clinic =
+                                          clinicState.clinics[index];
+                                      return ClinicListCard(
+                                        clinic: clinic,
+                                        onTap: () {
+                                          context.push(
+                                            AppRoutes.clinicViewWithId(
+                                              clinicId: clinic.id,
+                                            ),
+                                          );
+                                        },
+                                      );
+                                    },
+                                  ),
                                 const SizedBox(height: 20),
                               ],
                             ),
@@ -141,7 +199,8 @@ class _ClinicScreenState extends ConsumerState<ClinicScreen> {
           } else if (index == 2) {
             context.go(AppRoutes.home);
           } else if (index == 3) {
-            context.go(AppRoutes.trackingDebug);
+            final activeToken = ref.read(activeTokenLookupProvider).value;
+            context.go('/tracking/${activeToken?.id ?? "none"}');
           } else if (index == 4) {
             context.go(AppRoutes.profile);
           }

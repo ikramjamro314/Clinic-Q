@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'token.dart';
 
 @immutable
 class TrackingSnapshot {
@@ -9,6 +10,7 @@ class TrackingSnapshot {
   final int estimatedWaitMinutes;
   final String status;
   final DateTime lastSyncedAt;
+  final List<Token> fullTokenList;
 
   // Cache-aside / stale status flags
   final bool isFromCache;
@@ -22,6 +24,7 @@ class TrackingSnapshot {
     required this.estimatedWaitMinutes,
     required this.status,
     required this.lastSyncedAt,
+    this.fullTokenList = const [],
     this.isFromCache = false,
     this.isStale = false,
   });
@@ -34,6 +37,7 @@ class TrackingSnapshot {
     int? estimatedWaitMinutes,
     String? status,
     DateTime? lastSyncedAt,
+    List<Token>? fullTokenList,
     bool? isFromCache,
     bool? isStale,
   }) {
@@ -45,6 +49,7 @@ class TrackingSnapshot {
       estimatedWaitMinutes: estimatedWaitMinutes ?? this.estimatedWaitMinutes,
       status: status ?? this.status,
       lastSyncedAt: lastSyncedAt ?? this.lastSyncedAt,
+      fullTokenList: fullTokenList ?? this.fullTokenList,
       isFromCache: isFromCache ?? this.isFromCache,
       isStale: isStale ?? this.isStale,
     );

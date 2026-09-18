@@ -1,13 +1,9 @@
 import 'package:flutter/material.dart';
-import '../../../../core/theme/clinic_q_colors.dart';
+import '../../../../app/theme/clinic_q_colors.dart';
 import '../viewmodels/home_state.dart';
 
 class HomeDoctorCard extends StatelessWidget {
-  const HomeDoctorCard({
-    super.key,
-    required this.doctor,
-    this.onTap,
-  });
+  const HomeDoctorCard({super.key, required this.doctor, this.onTap});
 
   final DoctorItem doctor;
   final VoidCallback? onTap;
@@ -21,10 +17,7 @@ class HomeDoctorCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: ClinicQColors.cardBackground,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: ClinicQColors.cardBorder,
-            width: 1,
-          ),
+          border: Border.all(color: ClinicQColors.cardBorder, width: 1),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withOpacity(0.02),
@@ -48,16 +41,17 @@ class HomeDoctorCard extends StatelessWidget {
                           width: double.infinity,
                           height: 85,
                           fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) => Container(
-                            width: double.infinity,
-                            height: 85,
-                            color: ClinicQColors.quickActionBackground,
-                            child: const Icon(
-                              Icons.person,
-                              color: ClinicQColors.primaryTeal,
-                              size: 36,
-                            ),
-                          ),
+                          errorBuilder: (context, error, stackTrace) =>
+                              Container(
+                                width: double.infinity,
+                                height: 85,
+                                color: ClinicQColors.quickActionBackground,
+                                child: const Icon(
+                                  Icons.person,
+                                  color: ClinicQColors.primaryTeal,
+                                  size: 36,
+                                ),
+                              ),
                         )
                       : Container(
                           width: double.infinity,

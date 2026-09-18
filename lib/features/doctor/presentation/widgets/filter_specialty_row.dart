@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../../core/theme/clinic_q_colors.dart';
+import '../../../../app/theme/clinic_q_colors.dart';
 import '../../domain/entities/specialty_entity.dart';
 
 class FilterSpecialtyRow extends StatelessWidget {
@@ -17,7 +17,7 @@ class FilterSpecialtyRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    
+
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
@@ -40,11 +40,7 @@ class FilterSpecialtyRow extends StatelessWidget {
             gradient: ClinicQColors.gradientPrimary,
             borderRadius: BorderRadius.circular(12),
           ),
-          child: Icon(
-            specialty.iconReference,
-            color: Colors.white,
-            size: 24,
-          ),
+          child: Icon(specialty.iconReference, color: Colors.white, size: 24),
         ),
         title: Text(
           specialty.name,
@@ -57,9 +53,7 @@ class FilterSpecialtyRow extends StatelessWidget {
           value: isSelected,
           onChanged: onChanged,
           activeColor: ClinicQColors.primaryBlue,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(4),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
           side: const BorderSide(
             color: ClinicQColors.inputBorderDefault,
             width: 1.5,

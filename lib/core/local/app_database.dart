@@ -152,6 +152,14 @@ class AppDatabase extends _$AppDatabase {
           }
         },
       );
+
+  Future<void> clearAllTables() async {
+    await transaction(() async {
+      for (final table in allSchemaEntities.whereType<TableInfo>()) {
+        await delete(table).go();
+      }
+    });
+  }
 }
 
 LazyDatabase _openConnection() {

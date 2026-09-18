@@ -6,6 +6,10 @@ class TrackingState {
   final String? errorMessage;
   final bool isFromCache;
   final bool isStale;
+  final int feedbackRating;
+  final String feedbackText;
+  final bool isFeedbackSubmitting;
+  final bool isFeedbackSubmitted;
 
   const TrackingState({
     this.snapshot,
@@ -13,6 +17,10 @@ class TrackingState {
     this.errorMessage,
     this.isFromCache = false,
     this.isStale = false,
+    this.feedbackRating = 5,
+    this.feedbackText = '',
+    this.isFeedbackSubmitting = false,
+    this.isFeedbackSubmitted = false,
   });
 
   TrackingState copyWith({
@@ -21,6 +29,10 @@ class TrackingState {
     String? errorMessage,
     bool? isFromCache,
     bool? isStale,
+    int? feedbackRating,
+    String? feedbackText,
+    bool? isFeedbackSubmitting,
+    bool? isFeedbackSubmitted,
   }) {
     return TrackingState(
       snapshot: snapshot ?? this.snapshot,
@@ -28,6 +40,10 @@ class TrackingState {
       errorMessage: errorMessage,
       isFromCache: isFromCache ?? this.isFromCache,
       isStale: isStale ?? this.isStale,
+      feedbackRating: feedbackRating ?? this.feedbackRating,
+      feedbackText: feedbackText ?? this.feedbackText,
+      isFeedbackSubmitting: isFeedbackSubmitting ?? this.isFeedbackSubmitting,
+      isFeedbackSubmitted: isFeedbackSubmitted ?? this.isFeedbackSubmitted,
     );
   }
 }

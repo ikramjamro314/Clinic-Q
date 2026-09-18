@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../app/app_routes.dart';
-import '../../../../core/theme/clinic_q_colors.dart';
-import '../../../../core/theme/clinic_q_theme.dart';
+import '../../../../app/theme/clinic_q_colors.dart';
+import '../../../../app/theme/clinic_q_theme.dart';
 import '../../../../core/widgets/layout/clinicq_bottom_sheet_handle.dart';
 import '../../../../core/widgets/layout/clinicq_gradient_background.dart';
 import '../widgets/role_based/role_selection_card.dart';

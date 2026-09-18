@@ -2,7 +2,7 @@ import 'package:clinic_q/app/app_routes.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../../../core/theme/clinic_q_colors.dart';
+import '../../../../app/theme/clinic_q_colors.dart';
 import '../profile_providers.dart';
 import '../widgets/profile_menu_item.dart';
 import 'static_content_screen.dart';

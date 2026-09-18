@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../../core/theme/clinic_q_colors.dart';
+import '../../../../app/theme/clinic_q_colors.dart';
 import '../../../../core/widgets/inputs/clinicq_text_field.dart';
 import '../../../../core/widgets/buttons/clinicq_button.dart';
 import '../../../../core/widgets/feedback/skeleton_box.dart';
@@ -31,26 +31,60 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     super.dispose();
   }
 
+  String _formatDob(String? dob) {
+    if (dob == null || dob.trim().isEmpty) return '';
+    try {
+      final parsed = DateTime.tryParse(dob.trim());
+      if (parsed != null) {
+        return "${parsed.year}-${parsed.month.toString().padLeft(2, '0')}-${parsed.day.toString().padLeft(2, '0')}";
+      }
+    } catch (_) {}
+    if (dob.contains('T')) {
+      return dob.split('T').first;
+    }
+    return dob;
+  }
+
+  void _populateFields(dynamic profile) {
+    if (profile == null) return;
+    _nameController.text = profile.name ?? '';
+    _dobController.text = _formatDob(profile.dateOfBirth);
+    _phoneController.text = profile.phone ?? '';
+    _emailController.text = profile.email ?? '';
+    if (profile.gender != null && profile.gender.toString().isNotEmpty) {
+      final g = profile.gender.toString().toLowerCase();
+      if (g == 'female') {
+        _selectedGender = 'Female';
+      } else {
+        _selectedGender = 'Male';
+      }
+    }
+    _initialized = true;
+  }
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     if (!_initialized) {
-      final profile = ref.watch(profileViewModelProvider).profile;
+      final profile = ref.read(profileViewModelProvider).profile;
       if (profile != null) {
-        _nameController.text = profile.name;
-        _dobController.text = profile.dateOfBirth ?? '';
-        _phoneController.text = profile.phone ?? '';
-        _emailController.text = profile.email;
-        _selectedGender = profile.gender ?? 'Male';
+        _populateFields(profile);
       }
-      _initialized = true;
     }
   }
 
   Future<void> _selectDate(BuildContext context) async {
-    final initialDate = DateTime.now().subtract(
+    DateTime initialDate = DateTime.now().subtract(
       const Duration(days: 365 * 25),
     ); // default to age 25
+
+    if (_dobController.text.trim().isNotEmpty) {
+      final parsed = DateTime.tryParse(_dobController.text.trim());
+      if (parsed != null && parsed.isBefore(DateTime.now())) {
+        initialDate = parsed;
+      }
+    }
+
     final selectedDate = await showDatePicker(
       context: context,
       initialDate: initialDate,
@@ -127,6 +161,10 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final state = ref.watch(profileViewModelProvider);
+
+    if (!_initialized && state.profile != null) {
+      _populateFields(state.profile);
+    }
 
     return Scaffold(
       backgroundColor: ClinicQColors.appBackground,

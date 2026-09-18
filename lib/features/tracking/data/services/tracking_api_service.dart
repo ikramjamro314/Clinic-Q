@@ -1,6 +1,8 @@
 import 'package:dio/dio.dart';
 import '../../../../core/network/api_response.dart';
 import '../models/tracking_snapshot_model.dart';
+import '../../domain/entities/token.dart';
+import '../models/token_model.dart';
 
 class TrackingApiService {
   final Dio _dio;
@@ -33,13 +35,17 @@ class TrackingApiService {
           // Find our token details from the token list
           final tokenListRaw = rawData['fullTokenList'] ?? rawData['tokens'] ?? rawData['tokenList'];
           Map<String, dynamic>? myTokenJson;
+          
+          final List<Token> fullTokens = [];
           if (tokenListRaw is List) {
             for (final item in tokenListRaw) {
               if (item is Map<String, dynamic>) {
+                final tModel = TokenModel.fromJson(item);
+                fullTokens.add(tModel);
+                
                 final id = item['tokenId'] as String? ?? item['id'] as String? ?? item['token_id'] as String?;
                 if (id == tokenId) {
                   myTokenJson = item;
-                  break;
                 }
               }
             }
@@ -91,6 +97,7 @@ class TrackingApiService {
             estimatedWaitMinutes: estWait,
             status: statusVal,
             lastSyncedAt: DateTime.now(),
+            fullTokenList: fullTokens,
           );
         }
       } catch (e) {

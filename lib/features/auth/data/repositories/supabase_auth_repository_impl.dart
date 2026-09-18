@@ -21,8 +21,9 @@ class SupabaseAuthRepositoryImpl implements AuthRepository {
   final SupabaseAuthService _service;
   final Dio _dio;
   final ProfileLocalDataSource _localDataSource;
+  final AppDatabase _db;
 
-  SupabaseAuthRepositoryImpl(this._service, this._dio, this._localDataSource);
+  SupabaseAuthRepositoryImpl(this._service, this._dio, this._localDataSource, this._db);
 
   // ── Sign in ───────────────────────────────────────────────────────────────
 
@@ -107,6 +108,9 @@ class SupabaseAuthRepositoryImpl implements AuthRepository {
     debugPrint('>>> REPO.signInWithGoogle() called');
     try {
       await _service.signInWithGoogle();
+      // Clear any prior cached profile from previous users
+      await _localDataSource.clearCache();
+      await _clearLocalSession();
     } on AuthException {
       rethrow;
     } catch (e, stack) {
@@ -126,6 +130,8 @@ class SupabaseAuthRepositoryImpl implements AuthRepository {
   }) async {
     try {
       await _service.verifyEmailOtp(email: email, code: code);
+      await _localDataSource.clearCache();
+      await _clearLocalSession();
     } on OtpVerificationException {
       rethrow;
     } on ValidationException {
@@ -164,6 +170,13 @@ class SupabaseAuthRepositoryImpl implements AuthRepository {
       debugPrint(
         'SupabaseAuthRepositoryImpl.signOut Supabase error (non-fatal): $e',
       );
+    }
+
+    try {
+      await _db.clearAllTables();
+      debugPrint('[Auth] Cleared all local database cached tables');
+    } catch (e) {
+      debugPrint('[Auth] Failed to clear local database cache: $e');
     }
 
     await _clearLocalSession();
@@ -276,26 +289,21 @@ class SupabaseAuthRepositoryImpl implements AuthRepository {
 
   @override
   Future<UserProfile> getProfile() async {
+    final currentUser = getCurrentUser();
     final cachedRow = await _localDataSource.getCachedProfile();
-    if (cachedRow != null && _isCacheValid(cachedRow.cachedAt)) {
+
+    // If cached profile belongs to another user, clear it immediately
+    if (cachedRow != null &&
+        currentUser != null &&
+        cachedRow.id != currentUser.id &&
+        cachedRow.email.toLowerCase() != currentUser.email.toLowerCase()) {
       debugPrint(
-        '[ProfileRepository] Profile cache is fresh (<24h) — serving from CACHE',
+        '[ProfileRepository] Clearing stale cache of different user (${cachedRow.email} != ${currentUser.email})',
       );
-      return UserProfile(
-        id: cachedRow.id,
-        name: cachedRow.name,
-        role: cachedRow.role,
-        email: cachedRow.email,
-        phone: cachedRow.phone,
-        isAccountVerified: cachedRow.isAccountVerified,
-        clinicId: cachedRow.clinicId,
-        createdAt: cachedRow.createdAt,
-        updatedAt: cachedRow.updatedAt,
-        gender: cachedRow.gender,
-        dateOfBirth: cachedRow.dateOfBirth,
-      );
+      await _localDataSource.clearCache();
     }
 
+    // Attempt Network First to ensure we always fetch the actual profile for the current user
     try {
       final response = await _dio.get('/api/patient/profile');
       final rawData = ApiResponse.process(response.data);
@@ -321,7 +329,9 @@ class SupabaseAuthRepositoryImpl implements AuthRepository {
         ),
       );
 
-      debugPrint('[ProfileRepository] Fetched from NETWORK — 1 items');
+      debugPrint(
+        '[ProfileRepository] Fetched from NETWORK for ${networkProfile.email} — success',
+      );
       return networkProfile;
     } catch (error) {
       final appEx = mapErrorToException(error);
@@ -329,24 +339,35 @@ class SupabaseAuthRepositoryImpl implements AuthRepository {
         '[ProfileRepository] NETWORK failed — falling back to CACHE: $appEx',
       );
 
-      if (cachedRow != null) {
+      // If user profile is not found (404), do not serve stale cache
+      if (appEx is core_ex.NotFoundException) {
+        await _localDataSource.clearCache();
+        throw appEx;
+      }
+
+      final freshCachedRow = await _localDataSource.getCachedProfile();
+      if (freshCachedRow != null &&
+          currentUser != null &&
+          (freshCachedRow.id == currentUser.id ||
+              freshCachedRow.email.toLowerCase() ==
+                  currentUser.email.toLowerCase())) {
         final profile = UserProfile(
-          id: cachedRow.id,
-          name: cachedRow.name,
-          role: cachedRow.role,
-          email: cachedRow.email,
-          phone: cachedRow.phone,
-          isAccountVerified: cachedRow.isAccountVerified,
-          clinicId: cachedRow.clinicId,
-          createdAt: cachedRow.createdAt,
-          updatedAt: cachedRow.updatedAt,
-          gender: cachedRow.gender,
-          dateOfBirth: cachedRow.dateOfBirth,
+          id: freshCachedRow.id,
+          name: freshCachedRow.name,
+          role: freshCachedRow.role,
+          email: freshCachedRow.email,
+          phone: freshCachedRow.phone,
+          isAccountVerified: freshCachedRow.isAccountVerified,
+          clinicId: freshCachedRow.clinicId,
+          createdAt: freshCachedRow.createdAt,
+          updatedAt: freshCachedRow.updatedAt,
+          gender: freshCachedRow.gender,
+          dateOfBirth: freshCachedRow.dateOfBirth,
           isFromCache: true,
           cacheError: appEx.message,
         );
         debugPrint(
-          '[ProfileRepository] Returned 1 items from CACHE (cachedAt: ${cachedRow.cachedAt.toIso8601String()})',
+          '[ProfileRepository] Returned profile for ${freshCachedRow.email} from CACHE (cachedAt: ${freshCachedRow.cachedAt.toIso8601String()})',
         );
         return profile;
       }

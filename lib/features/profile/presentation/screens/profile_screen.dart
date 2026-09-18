@@ -1,9 +1,10 @@
+import 'package:clinic_q/features/tracking/presentation/screens/tracking_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart' as ul;
 import '../../../../app/app_routes.dart';
-import '../../../../core/theme/clinic_q_colors.dart';
+import '../../../../app/theme/clinic_q_colors.dart';
 import '../../../../core/widgets/feedback/skeleton_box.dart';
 import '../../../../core/widgets/feedback/clinicq_error_widget.dart';
 import '../../../../core/widgets/feedback/offline_banner.dart';
@@ -52,14 +53,26 @@ class ProfileScreen extends ConsumerWidget {
                         children: [
                           Row(
                             children: [
-                              const SkeletonBox(width: 80, height: 80, borderRadius: 40),
+                              const SkeletonBox(
+                                width: 80,
+                                height: 80,
+                                borderRadius: 40,
+                              ),
                               const SizedBox(width: 16),
                               Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  const SkeletonBox(width: 120, height: 20, borderRadius: 4),
+                                  const SkeletonBox(
+                                    width: 120,
+                                    height: 20,
+                                    borderRadius: 4,
+                                  ),
                                   const SizedBox(height: 8),
-                                  const SkeletonBox(width: 160, height: 14, borderRadius: 4),
+                                  const SkeletonBox(
+                                    width: 160,
+                                    height: 14,
+                                    borderRadius: 4,
+                                  ),
                                 ],
                               ),
                             ],
@@ -68,7 +81,9 @@ class ProfileScreen extends ConsumerWidget {
                           ...List.generate(
                             4,
                             (index) => Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 8.0),
+                              padding: const EdgeInsets.symmetric(
+                                vertical: 8.0,
+                              ),
                               child: SkeletonBox(
                                 width: double.infinity,
                                 height: 56,
@@ -94,7 +109,13 @@ class ProfileScreen extends ConsumerWidget {
 
                 final profile = state.profile;
                 final initials = profile != null && profile.name.isNotEmpty
-                    ? profile.name.trim().split(' ').map((e) => e[0]).take(2).join().toUpperCase()
+                    ? profile.name
+                          .trim()
+                          .split(' ')
+                          .map((e) => e[0])
+                          .take(2)
+                          .join()
+                          .toUpperCase()
                     : 'U';
 
                 return RefreshIndicator(
@@ -115,7 +136,9 @@ class ProfileScreen extends ConsumerWidget {
                             border: Border.all(color: ClinicQColors.cardBorder),
                             boxShadow: [
                               BoxShadow(
-                                color: ClinicQColors.cardShadow.withOpacity(0.04),
+                                color: ClinicQColors.cardShadow.withOpacity(
+                                  0.04,
+                                ),
                                 blurRadius: 10,
                                 offset: const Offset(0, 4),
                               ),
@@ -126,13 +149,15 @@ class ProfileScreen extends ConsumerWidget {
                               // Avatar circle
                               CircleAvatar(
                                 radius: 36,
-                                backgroundColor: ClinicQColors.primaryTeal.withOpacity(0.1),
+                                backgroundColor: ClinicQColors.primaryTeal
+                                    .withOpacity(0.1),
                                 child: Text(
                                   initials,
-                                  style: theme.textTheme.headlineSmall?.copyWith(
-                                    color: ClinicQColors.primaryTeal,
-                                    fontWeight: FontWeight.bold,
-                                  ),
+                                  style: theme.textTheme.headlineSmall
+                                      ?.copyWith(
+                                        color: ClinicQColors.primaryTeal,
+                                        fontWeight: FontWeight.bold,
+                                      ),
                                 ),
                               ),
                               const SizedBox(width: 16),
@@ -145,10 +170,11 @@ class ProfileScreen extends ConsumerWidget {
                                       profile?.name ?? 'User Name',
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
-                                      style: theme.textTheme.titleMedium?.copyWith(
-                                        fontWeight: FontWeight.bold,
-                                        color: ClinicQColors.textPrimary,
-                                      ),
+                                      style: theme.textTheme.titleMedium
+                                          ?.copyWith(
+                                            fontWeight: FontWeight.bold,
+                                            color: ClinicQColors.textPrimary,
+                                          ),
                                     ),
                                     const SizedBox(height: 4),
                                     Row(
@@ -158,10 +184,12 @@ class ProfileScreen extends ConsumerWidget {
                                             'Personal information',
                                             maxLines: 1,
                                             overflow: TextOverflow.ellipsis,
-                                            style: theme.textTheme.bodyMedium?.copyWith(
-                                              color: ClinicQColors.textSecondary,
-                                              fontWeight: FontWeight.w500,
-                                            ),
+                                            style: theme.textTheme.bodyMedium
+                                                ?.copyWith(
+                                                  color: ClinicQColors
+                                                      .textSecondary,
+                                                  fontWeight: FontWeight.w500,
+                                                ),
                                           ),
                                         ),
                                         const SizedBox(width: 4),
@@ -230,31 +258,57 @@ class ProfileScreen extends ConsumerWidget {
                             ProfileMenuItem(
                               icon: Icons.bookmark_border_rounded,
                               title: 'Interest list',
-                              onTap: () => context.push('/profile/interest-list'),
+                              onTap: () =>
+                                  context.push('/profile/interest-list'),
                             ),
-                            const Divider(height: 1, color: ClinicQColors.cardBorder, indent: 16, endIndent: 16),
+                            const Divider(
+                              height: 1,
+                              color: ClinicQColors.cardBorder,
+                              indent: 16,
+                              endIndent: 16,
+                            ),
                             ProfileMenuItem(
                               icon: Icons.group_outlined,
                               title: 'Join the community',
                               onTap: () {
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('Community feature coming soon!')),
+                                  const SnackBar(
+                                    content: Text(
+                                      'Community feature coming soon!',
+                                    ),
+                                  ),
                                 );
                               },
                             ),
-                            const Divider(height: 1, color: ClinicQColors.cardBorder, indent: 16, endIndent: 16),
+                            const Divider(
+                              height: 1,
+                              color: ClinicQColors.cardBorder,
+                              indent: 16,
+                              endIndent: 16,
+                            ),
                             ProfileMenuItem(
                               icon: Icons.description_outlined,
                               title: 'Terms and Policy',
-                              onTap: () => context.push('/profile/terms-and-policy'),
+                              onTap: () =>
+                                  context.push('/profile/terms-and-policy'),
                             ),
-                            const Divider(height: 1, color: ClinicQColors.cardBorder, indent: 16, endIndent: 16),
+                            const Divider(
+                              height: 1,
+                              color: ClinicQColors.cardBorder,
+                              indent: 16,
+                              endIndent: 16,
+                            ),
                             ProfileMenuItem(
                               icon: Icons.question_answer_outlined,
                               title: 'Frequently asked questions',
                               onTap: () => context.push('/profile/faq'),
                             ),
-                            const Divider(height: 1, color: ClinicQColors.cardBorder, indent: 16, endIndent: 16),
+                            const Divider(
+                              height: 1,
+                              color: ClinicQColors.cardBorder,
+                              indent: 16,
+                              endIndent: 16,
+                            ),
                             ProfileMenuItem(
                               icon: Icons.phone_in_talk_outlined,
                               title: 'Hotline 1900-2020',
@@ -265,7 +319,12 @@ class ProfileScreen extends ConsumerWidget {
                                 }
                               },
                             ),
-                            const Divider(height: 1, color: ClinicQColors.cardBorder, indent: 16, endIndent: 16),
+                            const Divider(
+                              height: 1,
+                              color: ClinicQColors.cardBorder,
+                              indent: 16,
+                              endIndent: 16,
+                            ),
                             ProfileMenuItem(
                               icon: Icons.logout_rounded,
                               iconColor: ClinicQColors.tokenMissed,
@@ -299,7 +358,8 @@ class ProfileScreen extends ConsumerWidget {
           } else if (index == 2) {
             context.go(AppRoutes.home);
           } else if (index == 3) {
-            context.go(AppRoutes.trackingDebug);
+            final activeToken = ref.read(activeTokenLookupProvider).value;
+            context.go('/tracking/${activeToken?.id ?? "none"}');
           }
         },
       ),

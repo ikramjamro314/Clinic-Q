@@ -1,16 +1,18 @@
 import 'package:clinic_q/features/clinic/presentation/widgets/clinic_card_skeleton.dart';
 import 'package:clinic_q/features/doctor/presentation/widgets/doctor_card_skeleton.dart';
 import 'package:clinic_q/features/home/presentation/widgets/home_section_header.dart';
+import 'package:clinic_q/features/tracking/presentation/screens/tracking_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../../core/theme/clinic_q_colors.dart';
+import '../../../../app/theme/clinic_q_colors.dart';
 import '../../../../core/widgets/feedback/clinicq_loader.dart';
 import '../../../../core/widgets/feedback/clinicq_error_widget.dart';
 import '../home_providers.dart';
 import '../widgets/home_app_bar.dart';
 import '../widgets/home_header.dart';
 import '../widgets/home_banner.dart';
+import '../widgets/home_active_token_banner.dart';
 import '../widgets/home_quick_actions.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../app/app_routes.dart';
@@ -29,6 +31,7 @@ class HomeScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final homeState = ref.watch(homeViewModelProvider);
     final homeNotifier = ref.read(homeViewModelProvider.notifier);
+    final activeToken = ref.watch(activeTokenLookupProvider).value;
 
     if (homeState.isLoading && homeState.bannerData == null) {
       return Scaffold(
@@ -141,7 +144,10 @@ class HomeScreen extends ConsumerWidget {
           Expanded(
             child: SafeArea(
               child: RefreshIndicator(
-                onRefresh: () async => homeNotifier.refresh(),
+                onRefresh: () async {
+                  ref.invalidate(activeTokenLookupProvider);
+                  homeNotifier.refresh();
+                },
                 color: ClinicQColors.primaryTeal,
                 child: SingleChildScrollView(
                   physics: const AlwaysScrollableScrollPhysics(),
@@ -157,8 +163,14 @@ class HomeScreen extends ConsumerWidget {
 
                       const SizedBox(height: 20),
 
-                      // Doctor Consultation booking banner
-                      if (homeState.bannerData != null)
+                      // Doctor Consultation or Active Tracking Banner
+                      if (activeToken != null)
+                        HomeActiveTokenBanner(
+                          token: activeToken,
+                          onTap: () =>
+                              context.push('/tracking/${activeToken.id}'),
+                        )
+                      else if (homeState.bannerData != null)
                         HomeBanner(bannerData: homeState.bannerData!),
 
                       const SizedBox(height: 20),
@@ -245,7 +257,8 @@ class HomeScreen extends ConsumerWidget {
           } else if (index == 2) {
             context.go(AppRoutes.home);
           } else if (index == 3) {
-            context.go(AppRoutes.trackingDebug);
+            final activeToken = ref.read(activeTokenLookupProvider).value;
+            context.go('/tracking/${activeToken?.id ?? "none"}');
           } else if (index == 4) {
             context.go(AppRoutes.profile);
           } else {

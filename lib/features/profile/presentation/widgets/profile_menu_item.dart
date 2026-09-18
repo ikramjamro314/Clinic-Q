@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../../core/theme/clinic_q_colors.dart';
+import '../../../../app/theme/clinic_q_colors.dart';
 
 class ProfileMenuItem extends StatelessWidget {
   const ProfileMenuItem({
@@ -39,7 +39,9 @@ class ProfileMenuItem extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(8.0),
                 decoration: BoxDecoration(
-                  color: (iconColor ?? ClinicQColors.primaryTeal).withOpacity(0.08),
+                  color: (iconColor ?? ClinicQColors.primaryTeal).withOpacity(
+                    0.08,
+                  ),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(

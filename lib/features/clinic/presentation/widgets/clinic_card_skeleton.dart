@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../core/widgets/feedback/skeleton_box.dart';
-import '../../../../core/theme/clinic_q_colors.dart';
+import '../../../../app/theme/clinic_q_colors.dart';
 
 class ClinicCardSkeleton extends StatelessWidget {
   const ClinicCardSkeleton({super.key});

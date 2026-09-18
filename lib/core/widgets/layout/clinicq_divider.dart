@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../theme/clinic_q_colors.dart';
+import '../../../app/theme/clinic_q_colors.dart';
 
 class ClinicQDivider extends StatelessWidget {
   const ClinicQDivider({
@@ -25,8 +25,11 @@ class ClinicQDivider extends StatelessWidget {
     return Divider(
       height: height,
       thickness: thickness,
-      color: color ??
-          (isDark ? ClinicQColors.darkSurfaceVariant : ClinicQColors.dividerMedium),
+      color:
+          color ??
+          (isDark
+              ? ClinicQColors.darkSurfaceVariant
+              : ClinicQColors.dividerMedium),
       indent: indent,
       endIndent: endIndent,
     );

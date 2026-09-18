@@ -1,4 +1,4 @@
-import 'package:clinic_q/core/theme/clinic_q_colors.dart';
+import 'package:clinic_q/app/theme/clinic_q_colors.dart';
 import 'package:flutter/material.dart';
 import '../../domain/entities/review_entity.dart';
 

@@ -1,25 +1,30 @@
+import 'dart:async';
+import 'package:clinic_q/features/auth/presentation/auth_providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../app/app_routes.dart';
 
-import '../../../../core/theme/clinic_q_colors.dart';
+import '../../../../app/theme/clinic_q_colors.dart';
 import '../../../../core/widgets/feedback/clinicq_loader.dart';
 import '../../../../core/widgets/feedback/clinicq_error_widget.dart';
 import '../../../../core/widgets/feedback/offline_banner.dart';
 import '../../../../core/widgets/buttons/clinicq_button.dart';
-import '../../../../core/widgets/buttons/clinicq_outlined_button.dart';
 import '../../../home/presentation/widgets/home_bottom_nav_bar.dart';
 import '../../../doctor/presentation/doctor_providers.dart';
 import '../../../doctor/domain/entities/doctor_entity.dart';
 import '../../domain/entities/token.dart';
 import '../providers.dart';
-import '../widgets/doctor_queue_card.dart';
-import '../widgets/queue_stat_box.dart';
-import '../widgets/queue_progress_row.dart';
+import '../widgets/tracking_header_card.dart';
+import '../widgets/tracking_stats_grid.dart';
+import '../widgets/tracking_queue_lineup.dart';
+import '../widgets/tracking_queue_timeline.dart';
 
 /// Resolves the Doctor associated with a given Token ID
-final trackingDoctorProvider = FutureProvider.family<DoctorEntity?, String>((ref, tokenId) async {
+final trackingDoctorProvider = FutureProvider.family<DoctorEntity?, String>((
+  ref,
+  tokenId,
+) async {
   try {
     final tokens = await ref.read(appointmentRepositoryProvider).getTokens();
     final token = tokens.firstWhere((t) => t.id == tokenId);
@@ -30,15 +35,31 @@ final trackingDoctorProvider = FutureProvider.family<DoctorEntity?, String>((ref
   }
 });
 
-/// Checks if there is an active token for the current user
+/// Checks if there is an active token for the current user (strictly latest active appointment)
 final activeTokenLookupProvider = FutureProvider<Token?>((ref) async {
+  final currentUser = ref.watch(authRepositoryProvider).getCurrentUser();
+  if (currentUser == null) return null;
+
   try {
-    final tokens = await ref.read(appointmentRepositoryProvider).getTokens();
-    final active = tokens.where((t) => t.status != 'completed' && t.status != 'cancelled').toList();
-    if (active.isNotEmpty) {
-      // Return the most recent active token
-      active.sort((a, b) => (b.createdAt ?? '').compareTo(a.createdAt ?? ''));
-      return active.first;
+    final tokens = await ref
+        .read(appointmentRepositoryProvider)
+        .getTokens(userId: currentUser.id);
+
+    final userActiveTokens = tokens
+        .where(
+          (t) =>
+              t.userId == currentUser.id &&
+              t.status != 'completed' &&
+              t.status != 'cancelled',
+        )
+        .toList();
+
+    if (userActiveTokens.isNotEmpty) {
+      // Sort descending by creation date to get the single latest active appointment
+      userActiveTokens.sort(
+        (a, b) => (b.createdAt ?? '').compareTo(a.createdAt ?? ''),
+      );
+      return userActiveTokens.first;
     }
   } catch (e) {
     debugPrint('[Tracking] Error looking up active token: $e');
@@ -49,190 +70,132 @@ final activeTokenLookupProvider = FutureProvider<Token?>((ref) async {
 class TrackingScreen extends ConsumerWidget {
   final String? tokenId;
 
-  const TrackingScreen({
-    super.key,
-    this.tokenId,
-  });
+  const TrackingScreen({super.key, this.tokenId});
+
+  void _handleNavigation(BuildContext context, int index, WidgetRef ref) {
+    if (index == 0) {
+      context.go(AppRoutes.clinics);
+    } else if (index == 1) {
+      context.go(AppRoutes.doctors);
+    } else if (index == 2) {
+      context.go(AppRoutes.home);
+    } else if (index == 3) {
+      // Already on Queue/Tracking tab
+    } else if (index == 4) {
+      context.go(AppRoutes.profile);
+    }
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    if (tokenId != null) {
-      return _TrackingContent(tokenId: tokenId!, showBottomNav: false);
-    }
+    final hasSpecificToken =
+        tokenId != null && tokenId != 'none' && tokenId != 'active';
 
+    return Scaffold(
+      backgroundColor: ClinicQColors.appBackground,
+      appBar: AppBar(
+        backgroundColor: ClinicQColors.appBackground,
+        elevation: 0,
+        automaticallyImplyLeading: false,
+        title: const Text(
+          'Live Tracking',
+          style: TextStyle(
+            color: ClinicQColors.textPrimary,
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(
+              Icons.history_rounded,
+              color: ClinicQColors.textPrimary,
+            ),
+            onPressed: () => context.push(AppRoutes.appointmentHistory),
+            tooltip: 'Appointment History',
+          ),
+        ],
+      ),
+      body: hasSpecificToken
+          ? _TrackingBody(tokenId: tokenId!)
+          : _buildActiveLookupBody(context, ref),
+      bottomNavigationBar: HomeBottomNavBar(
+        currentIndex: 3,
+        onTap: (index) => _handleNavigation(context, index, ref),
+      ),
+    );
+  }
+
+  Widget _buildActiveLookupBody(BuildContext context, WidgetRef ref) {
     final activeTokenAsync = ref.watch(activeTokenLookupProvider);
 
     return activeTokenAsync.when(
-      loading: () => Scaffold(
-        backgroundColor: ClinicQColors.appBackground,
-        appBar: AppBar(
-          backgroundColor: ClinicQColors.appBackground,
-          elevation: 0,
-          title: const Text(
-            'Live Tracking',
-            style: TextStyle(
-              color: ClinicQColors.textPrimary,
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.history_rounded, color: ClinicQColors.textPrimary),
-              onPressed: () => context.push(AppRoutes.appointmentHistory),
-              tooltip: 'Appointment History',
-            ),
-          ],
-        ),
-        body: const Center(child: ClinicQLoader()),
-        bottomNavigationBar: HomeBottomNavBar(
-          currentIndex: 3,
-          onTap: (index) {
-            _handleNavigation(context, index);
-          },
-        ),
-      ),
-      error: (err, stack) => Scaffold(
-        backgroundColor: ClinicQColors.appBackground,
-        appBar: AppBar(
-          backgroundColor: ClinicQColors.appBackground,
-          elevation: 0,
-          title: const Text(
-            'Live Tracking',
-            style: TextStyle(
-              color: ClinicQColors.textPrimary,
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.history_rounded, color: ClinicQColors.textPrimary),
-              onPressed: () => context.push(AppRoutes.appointmentHistory),
-              tooltip: 'Appointment History',
-            ),
-          ],
-        ),
-        body: Center(
-          child: ClinicQErrorWidget(
-            message: 'Failed to look up active appointments.',
-            onRetry: () => ref.refresh(activeTokenLookupProvider),
-          ),
-        ),
-        bottomNavigationBar: HomeBottomNavBar(
-          currentIndex: 3,
-          onTap: (index) {
-            _handleNavigation(context, index);
-          },
+      loading: () => const Center(child: ClinicQLoader()),
+      error: (err, stack) => Center(
+        child: ClinicQErrorWidget(
+          message: 'Failed to look up active appointments.',
+          onRetry: () => ref.refresh(activeTokenLookupProvider),
         ),
       ),
       data: (activeToken) {
         if (activeToken == null) {
-          return Scaffold(
-            backgroundColor: ClinicQColors.appBackground,
-            appBar: AppBar(
-              backgroundColor: ClinicQColors.appBackground,
-              elevation: 0,
-              title: const Text(
-                'Live Tracking',
-                style: TextStyle(
-                  color: ClinicQColors.textPrimary,
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                ),
+          return Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(32.0),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(24),
+                    decoration: BoxDecoration(
+                      color: ClinicQColors.primaryTeal.withOpacity(0.08),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.track_changes_rounded,
+                      color: ClinicQColors.primaryTeal,
+                      size: 48,
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  const Text(
+                    'No Active Token',
+                    style: TextStyle(
+                      color: ClinicQColors.textPrimary,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'You do not have any active appointments at the moment.',
+                    style: TextStyle(
+                      color: ClinicQColors.textSecondary,
+                      fontSize: 14,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 32),
+                  ClinicQButton(
+                    label: 'Book an Appointment',
+                    gradient: ClinicQColors.gradientPrimary,
+                    onPressed: () => context.go(AppRoutes.home),
+                  ),
+                ],
               ),
-              actions: [
-                IconButton(
-                  icon: const Icon(Icons.history_rounded, color: ClinicQColors.textPrimary),
-                  onPressed: () => context.push(AppRoutes.appointmentHistory),
-                  tooltip: 'Appointment History',
-                ),
-              ],
-            ),
-            body: Center(
-              child: Padding(
-                padding: const EdgeInsets.all(32.0),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(24),
-                      decoration: BoxDecoration(
-                        color: ClinicQColors.primaryTeal.withOpacity(0.08),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.track_changes_rounded,
-                        color: ClinicQColors.primaryTeal,
-                        size: 48,
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-                    const Text(
-                      'No Active Token',
-                      style: TextStyle(
-                        color: ClinicQColors.textPrimary,
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    const Text(
-                      'You do not have any active appointments at the moment.',
-                      style: TextStyle(
-                        color: ClinicQColors.textSecondary,
-                        fontSize: 14,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 32),
-                    ClinicQButton(
-                      label: 'Book an Appointment',
-                      gradient: ClinicQColors.gradientPrimary,
-                      onPressed: () {
-                        context.go('/home');
-                      },
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            bottomNavigationBar: HomeBottomNavBar(
-              currentIndex: 3,
-              onTap: (index) {
-                _handleNavigation(context, index);
-              },
             ),
           );
         }
-        return _TrackingContent(tokenId: activeToken.id, showBottomNav: true);
+        return _TrackingBody(tokenId: activeToken.id);
       },
     );
   }
-
-  void _handleNavigation(BuildContext context, int index) {
-    if (index == 0) {
-      context.go('/clinics');
-    } else if (index == 1) {
-      context.go('/doctors');
-    } else if (index == 2) {
-      context.go('/home');
-    } else if (index == 3) {
-      // Already on tracking
-    } else if (index == 4) {
-      context.go('/profile');
-    }
-  }
 }
 
-class _TrackingContent extends ConsumerWidget {
+class _TrackingBody extends ConsumerWidget {
   final String tokenId;
-  final bool showBottomNav;
 
-  const _TrackingContent({
-    required this.tokenId,
-    this.showBottomNav = false,
-  });
+  const _TrackingBody({required this.tokenId});
 
   String _formatLastSynced(DateTime dateTime) {
     final hrs = dateTime.hour.toString().padLeft(2, '0');
@@ -264,19 +227,41 @@ class _TrackingContent extends ConsumerWidget {
           ElevatedButton(
             style: ElevatedButton.styleFrom(
               backgroundColor: ClinicQColors.errorIcon,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
             ),
             onPressed: () async {
-              Navigator.pop(ctx);
-              final trackingNotifier = ref.read(trackingViewModelProvider(tokenId).notifier);
+              // Show non-dismissible loading overlay spinner
+              showDialog(
+                context: context,
+                barrierDismissible: false,
+                builder: (BuildContext loadingContext) {
+                  return const Center(child: ClinicQLoader());
+                },
+              );
+
+              final trackingNotifier = ref.read(
+                trackingViewModelProvider(tokenId).notifier,
+              );
               final success = await trackingNotifier.cancelTrackingToken();
+
+              // Dismiss loading overlay
+              if (context.mounted) {
+                Navigator.pop(context);
+              }
+              // Dismiss confirmation dialog
+              Navigator.pop(ctx);
+
               if (success) {
                 ref.invalidate(activeTokenLookupProvider);
                 if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Appointment cancelled successfully.')),
+                    const SnackBar(
+                      content: Text('Appointment cancelled successfully.'),
+                    ),
                   );
-                  context.go('/home');
+                  context.go(AppRoutes.home);
                 }
               } else {
                 if (context.mounted) {
@@ -289,7 +274,10 @@ class _TrackingContent extends ConsumerWidget {
                 }
               }
             },
-            child: const Text('Yes, Cancel', style: TextStyle(color: Colors.white)),
+            child: const Text(
+              'Yes, Cancel',
+              style: TextStyle(color: Colors.white),
+            ),
           ),
         ],
       ),
@@ -298,192 +286,173 @@ class _TrackingContent extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    ref.listen<TrackingState>(trackingViewModelProvider(tokenId), (
+      previous,
+      next,
+    ) {
+      if (next.snapshot?.status == 'completed') {
+        context.go('/tracking/$tokenId/completed');
+      }
+    });
+
     final trackingState = ref.watch(trackingViewModelProvider(tokenId));
     final doctorAsync = ref.watch(trackingDoctorProvider(tokenId));
-
     final isOffline = trackingState.isFromCache || trackingState.isStale;
 
-    return Scaffold(
-      backgroundColor: ClinicQColors.appBackground,
-      appBar: AppBar(
-        backgroundColor: ClinicQColors.appBackground,
-        elevation: 0,
-        automaticallyImplyLeading: !showBottomNav,
-        leading: showBottomNav
-            ? null
-            : IconButton(
-                icon: const Icon(Icons.arrow_back, color: ClinicQColors.textPrimary),
-                onPressed: () => context.pop(),
+    return SafeArea(
+      child: Column(
+        children: [
+          if (isOffline)
+            const OfflineBanner(
+              message: 'Connection lost — showing cached queue status',
+            ),
+          if (trackingState.snapshot?.status == 'paused')
+            Container(
+              width: double.infinity,
+              color: Colors.amber.shade800,
+              padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
+              child: const Row(
+                children: [
+                  Icon(
+                    Icons.pause_circle_filled,
+                    color: Colors.white,
+                    size: 20,
+                  ),
+                  SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'The doctor is currently on break. The queue is temporarily paused.',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ),
+                ],
               ),
-        title: const Text(
-          'Live Tracking',
-          style: TextStyle(
-            color: ClinicQColors.textPrimary,
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.history_rounded, color: ClinicQColors.textPrimary),
-            onPressed: () => context.push(AppRoutes.appointmentHistory),
-            tooltip: 'Appointment History',
+            ),
+          Expanded(
+            child: trackingState.isLoading
+                ? const Center(child: ClinicQLoader())
+                : trackingState.errorMessage != null
+                ? Center(
+                    child: ClinicQErrorWidget(
+                      message: trackingState.errorMessage!,
+                      onRetry: () =>
+                          ref.refresh(trackingViewModelProvider(tokenId)),
+                    ),
+                  )
+                : SingleChildScrollView(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 24.0,
+                      vertical: 16.0,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // 1. Premium Header Gradient Card
+                        doctorAsync.when(
+                          loading: () => const Center(child: ClinicQLoader()),
+                          error: (err, stack) => TrackingHeaderCard(
+                            snapshot: trackingState.snapshot!,
+                          ),
+                          data: (doctor) => TrackingHeaderCard(
+                            snapshot: trackingState.snapshot!,
+                            doctor: doctor,
+                          ),
+                        ),
+
+                        const SizedBox(height: 20),
+
+                        // 2. Stats Grid Row (Wait Time & Patients In Queue)
+                        if (trackingState.snapshot != null) ...[
+                          TrackingStatsGrid(snapshot: trackingState.snapshot!),
+                          const SizedBox(height: 24),
+
+                          // 3. Horizontal Visual Lineup of Queue
+                          TrackingQueueLineup(
+                            snapshot: trackingState.snapshot!,
+                          ),
+                          const SizedBox(height: 24),
+
+                          // 4. Queue Status Vertical Timeline
+                          TrackingQueueTimeline(
+                            snapshot: trackingState.snapshot!,
+                          ),
+                          const SizedBox(height: 24),
+
+                          // 5. Notification banner
+                          Container(
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: ClinicQColors.infoBackground,
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(
+                                color: ClinicQColors.infoBorder.withOpacity(
+                                  0.3,
+                                ),
+                              ),
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(
+                                  Icons.notifications_active_rounded,
+                                  color: ClinicQColors.infoIcon,
+                                  size: 20,
+                                ),
+                                const SizedBox(width: 12),
+                                const Expanded(
+                                  child: Text(
+                                    'We\'ll notify you when your turn is near.',
+                                    style: TextStyle(
+                                      color: ClinicQColors.infoText,
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+
+                          // Last synced timestamp
+                          Center(
+                            child: Text(
+                              'Last synced at: ${_formatLastSynced(trackingState.snapshot!.lastSyncedAt)}',
+                              style: const TextStyle(
+                                color: ClinicQColors.textTertiary,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 32),
+                        ],
+
+                        // 6. Cancel Action
+                        if (trackingState.snapshot?.status != 'cancelled')
+                          SizedBox(
+                            width: double.infinity,
+                            child: TextButton(
+                              onPressed: () => _showCancelDialog(context, ref),
+                              child: const Text(
+                                'Cancel Appointment',
+                                style: TextStyle(
+                                  color: ClinicQColors.errorIcon,
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ),
+                        const SizedBox(height: 24),
+                      ],
+                    ),
+                  ),
           ),
         ],
       ),
-      body: SafeArea(
-        child: Column(
-          children: [
-            if (isOffline)
-              const OfflineBanner(
-                message: 'Connection lost — showing cached queue status',
-              ),
-            if (trackingState.snapshot?.status == 'paused')
-              Container(
-                width: double.infinity,
-                color: Colors.amber.shade800,
-                padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
-                child: Row(
-                  children: [
-                    const Icon(Icons.pause_circle_filled, color: Colors.white, size: 20),
-                    const SizedBox(width: 8),
-                    const Expanded(
-                      child: Text(
-                        'The doctor is currently on break. The queue is temporarily paused.',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w600,
-                          fontSize: 13,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            Expanded(
-              child: trackingState.isLoading
-                  ? const Center(child: ClinicQLoader())
-                  : trackingState.errorMessage != null
-                      ? Center(
-                          child: ClinicQErrorWidget(
-                            message: trackingState.errorMessage!,
-                            onRetry: () => ref.refresh(trackingViewModelProvider(tokenId)),
-                          ),
-                        )
-                      : SingleChildScrollView(
-                          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              doctorAsync.when(
-                                loading: () => const Center(child: ClinicQLoader()),
-                                error: (err, stack) => const SizedBox(),
-                                data: (doctor) {
-                                  if (doctor == null) return const SizedBox();
-                                  return DoctorQueueCard(
-                                    doctor: doctor,
-                                    tokenNumber: trackingState.snapshot?.yourTokenNumber,
-                                    nowServingNumber: trackingState.snapshot?.currentTokenNumber,
-                                    dateString: 'Today',
-                                  );
-                                },
-                              ),
-                              const SizedBox(height: 16),
-                              if (trackingState.snapshot != null) ...[
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      child: QueueStatBox(
-                                        icon: Icons.people_outline_rounded,
-                                        iconColor: ClinicQColors.primaryBlue,
-                                        iconBackgroundColor:
-                                            ClinicQColors.primaryBlue.withOpacity(0.1),
-                                        value: trackingState.snapshot!.patientsAheadCount.toString(),
-                                        label: 'Patients ahead of you',
-                                      ),
-                                    ),
-                                    const SizedBox(width: 16),
-                                    Expanded(
-                                      child: QueueStatBox(
-                                        icon: Icons.access_time_rounded,
-                                        iconColor: ClinicQColors.primaryTeal,
-                                        iconBackgroundColor:
-                                            ClinicQColors.primaryTeal.withOpacity(0.1),
-                                        value: '${trackingState.snapshot!.estimatedWaitMinutes} min',
-                                        label: 'Estimated wait time',
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 16),
-                                QueueProgressRow(
-                                  nowServingNumber: trackingState.snapshot!.currentTokenNumber,
-                                  totalTokens: trackingState.snapshot!.yourTokenNumber,
-                                  yourTokenNumber: trackingState.snapshot!.yourTokenNumber,
-                                ),
-                                const SizedBox(height: 16),
-                                // Last synced timestamp
-                                Center(
-                                  child: Text(
-                                    'Last synced at: ${_formatLastSynced(trackingState.snapshot!.lastSyncedAt)}',
-                                    style: const TextStyle(
-                                      color: ClinicQColors.textTertiary,
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(height: 32),
-                              ],
-                              // Cancel Action (Outlined Red Button for destructive style)
-                              if (trackingState.snapshot?.status != 'cancelled')
-                                SizedBox(
-                                  width: double.infinity,
-                                  child: OutlinedButton.icon(
-                                    style: OutlinedButton.styleFrom(
-                                      foregroundColor: ClinicQColors.errorIcon,
-                                      side: const BorderSide(color: ClinicQColors.errorIcon),
-                                      padding: const EdgeInsets.symmetric(vertical: 14),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(16),
-                                      ),
-                                    ),
-                                    onPressed: () => _showCancelDialog(context, ref),
-                                    icon: const Icon(Icons.cancel_outlined, size: 20),
-                                    label: const Text(
-                                      'Cancel Appointment',
-                                      style: TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              const SizedBox(height: 24),
-                            ],
-                          ),
-                        ),
-            ),
-          ],
-        ),
-      ),
-      bottomNavigationBar: showBottomNav
-          ? HomeBottomNavBar(
-              currentIndex: 3,
-              onTap: (index) {
-                if (index == 0) {
-                  context.go('/clinics');
-                } else if (index == 1) {
-                  context.go('/doctors');
-                } else if (index == 2) {
-                  context.go('/home');
-                } else if (index == 3) {
-                  // Already on tracking
-                } else if (index == 4) {
-                  context.go('/profile');
-                }
-              },
-            )
-          : null,
     );
   }
 }

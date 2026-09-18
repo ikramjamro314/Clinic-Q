@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../../core/theme/clinic_q_colors.dart';
+import '../../../../app/theme/clinic_q_colors.dart';
 import '../../../doctor/domain/entities/doctor_entity.dart';
 
 class SelectableDoctorRow extends StatelessWidget {
@@ -25,9 +25,7 @@ class SelectableDoctorRow extends StatelessWidget {
           color: ClinicQColors.cardBackground,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: isSelected
-                ? ClinicQColors.primaryTeal
-                : Colors.transparent,
+            color: isSelected ? ClinicQColors.primaryTeal : Colors.transparent,
             width: 2,
           ),
           boxShadow: const [
@@ -131,7 +129,9 @@ class SelectableDoctorRow extends StatelessWidget {
     final parts = name.split(' ');
     String initials = '';
     for (var part in parts) {
-      if (part.isNotEmpty && part.toLowerCase() != 'dr.' && part.toLowerCase() != 'dr') {
+      if (part.isNotEmpty &&
+          part.toLowerCase() != 'dr.' &&
+          part.toLowerCase() != 'dr') {
         initials += part[0].toUpperCase();
         if (initials.length >= 2) break;
       }

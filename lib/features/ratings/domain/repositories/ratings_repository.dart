@@ -4,4 +4,12 @@ abstract class RatingsRepository {
   Future<List<ReviewEntity>> getReviewsFor({
     required String doctorId,
   });
+
+  Future<void> submitFeedback({
+    required String doctorId,
+    required String clinicId,
+    required int stars,
+    required String review,
+    required String userId,
+  });
 }

@@ -1,6 +1,6 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
-import '../../../../core/theme/clinic_q_colors.dart';
+import '../../../../app/theme/clinic_q_colors.dart';
 
 class QueueProgressRow extends StatelessWidget {
   final int nowServingNumber;
@@ -25,8 +25,14 @@ class QueueProgressRow extends StatelessWidget {
     // Generate upcoming bubbles to show
     // We want to show from nowServingNumber up to at least max(nowServingNumber + 6, yourTokenNumber + 2)
     final startNum = nowServingNumber;
-    final endNum = max(nowServingNumber + 6, (yourTokenNumber ?? nowServingNumber) + 2);
-    final bubbleNumbers = List<int>.generate(endNum - startNum + 1, (i) => startNum + i);
+    final endNum = max(
+      nowServingNumber + 6,
+      (yourTokenNumber ?? nowServingNumber) + 2,
+    );
+    final bubbleNumbers = List<int>.generate(
+      endNum - startNum + 1,
+      (i) => startNum + i,
+    );
 
     return Container(
       decoration: BoxDecoration(
@@ -108,7 +114,10 @@ class QueueProgressRow extends StatelessWidget {
                 } else if (isYou) {
                   circleColor = Colors.white;
                   textColor = ClinicQColors.primaryBlue;
-                  border = Border.all(color: ClinicQColors.primaryBlue, width: 2);
+                  border = Border.all(
+                    color: ClinicQColors.primaryBlue,
+                    width: 2,
+                  );
                   label = 'YOU';
                 }
 

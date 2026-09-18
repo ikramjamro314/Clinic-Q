@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../../core/theme/clinic_q_colors.dart';
+import '../../../../app/theme/clinic_q_colors.dart';
 import '../../domain/entities/clinic_entity.dart';
 
 class ClinicListCard extends StatelessWidget {
@@ -57,7 +57,9 @@ class ClinicListCard extends StatelessWidget {
                       vertical: 6,
                     ),
                     decoration: BoxDecoration(
-                      color: ClinicQColors.specialtyTagBackground.withOpacity(0.9),
+                      color: ClinicQColors.specialtyTagBackground.withOpacity(
+                        0.9,
+                      ),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(
@@ -72,7 +74,7 @@ class ClinicListCard extends StatelessWidget {
                 ),
               ],
             ),
-            
+
             // Details Area
             Padding(
               padding: const EdgeInsets.all(16.0),
@@ -117,7 +119,7 @@ class ClinicListCard extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(width: 16),
-                      
+
                       // Hours
                       const Icon(
                         Icons.access_time_rounded,
@@ -165,7 +167,7 @@ class ClinicListCard extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 12),
-                  
+
                   const Divider(height: 1, color: ClinicQColors.dividerLight),
                   const SizedBox(height: 12),
 
@@ -211,7 +213,7 @@ class ClinicListCard extends StatelessWidget {
                           ],
                         ],
                       ),
-                      
+
                       // Right: View Clinic Button
                       Container(
                         padding: const EdgeInsets.symmetric(

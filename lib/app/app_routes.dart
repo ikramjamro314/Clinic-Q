@@ -22,12 +22,12 @@ class AppRoutes {
   static const String allReviews = '/reviews/:id';
   static const String clinicView = '/clinics/:id';
   static const String selectDoctor = '/clinics/:id/select-doctor';
-  static const String trackingDebug = '/tracking-debug';
   static const String appointmentHistory = '/appointments/history';
   static const String bookingTokenInfo = '/booking/token-info';
   static const String bookingConfirm = '/booking/confirm';
   static const String bookingSuccess = '/booking/success';
   static const String tracking = '/tracking/:id';
+  static const String trackingCompleted = '/tracking/:id/completed';
 
   static String otpVerificationWithParams({required String email}) {
     final queryParams = <String, String>{'email': email};

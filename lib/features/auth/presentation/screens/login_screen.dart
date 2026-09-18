@@ -5,6 +5,8 @@ import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../app/app_routes.dart';
 import '../../../../core/error/auth_exceptions.dart';
+import 'package:clinic_q/features/profile/presentation/profile_providers.dart';
+import 'package:clinic_q/features/home/presentation/home_providers.dart';
 import '../widgets/login_signup/auth_header.dart';
 import '../widgets/login_signup/auth_tab_toggle.dart';
 import '../widgets/login_signup/or_divider.dart';
@@ -39,6 +41,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       await ref.read(authRepositoryProvider).signInWithGoogle();
       debugPrint('>>> LOGIN_SCREEN: signInWithGoogle() completed successfully');
       if (!mounted) return;
+
+      ref.invalidate(profileViewModelProvider);
+      ref.invalidate(homeViewModelProvider);
+      ref.read(hasProfileProvider.notifier).setState(null);
 
       context.go(AppRoutes.home);
     } catch (e) {

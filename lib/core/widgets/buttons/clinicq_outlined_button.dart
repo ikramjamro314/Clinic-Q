@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../theme/clinic_q_colors.dart';
+import '../../../app/theme/clinic_q_colors.dart';
 
 class ClinicQOutlinedButton extends StatelessWidget {
   const ClinicQOutlinedButton({
@@ -53,20 +53,14 @@ class ClinicQOutlinedButton extends StatelessWidget {
       decoration: BoxDecoration(
         color: bg,
         borderRadius: BorderRadius.circular(borderRadius),
-        border: Border.all(
-          color: border,
-          width: 1.5,
-        ),
+        border: Border.all(color: border, width: 1.5),
       ),
       alignment: Alignment.center,
       child: isLoading
           ? SizedBox(
               height: 24,
               width: 24,
-              child: CircularProgressIndicator(
-                color: fg,
-                strokeWidth: 2.5,
-              ),
+              child: CircularProgressIndicator(color: fg, strokeWidth: 2.5),
             )
           : Row(
               mainAxisSize: MainAxisSize.min,

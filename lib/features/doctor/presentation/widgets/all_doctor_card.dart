@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../../core/theme/clinic_q_colors.dart';
+import '../../../../app/theme/clinic_q_colors.dart';
 import '../../domain/entities/doctor_entity.dart';
 
 class AllDoctorCard extends StatelessWidget {

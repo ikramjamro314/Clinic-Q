@@ -1,13 +1,10 @@
 import 'package:flutter/material.dart';
-import '../../../../core/theme/clinic_q_colors.dart';
+import '../../../../app/theme/clinic_q_colors.dart';
 
 class BookingStepHeader extends StatelessWidget {
-  final int currentStep; // 1: Doctor, 2: Token Info, 3: Confirm
+  final int currentStep; // 1: Doctor, 2: Confirm
 
-  const BookingStepHeader({
-    super.key,
-    required this.currentStep,
-  });
+  const BookingStepHeader({super.key, required this.currentStep});
 
   @override
   Widget build(BuildContext context) {
@@ -18,9 +15,7 @@ class BookingStepHeader extends StatelessWidget {
         children: [
           _buildStep(1, 'Doctor'),
           _buildDivider(1),
-          _buildStep(2, 'Token Info'),
-          _buildDivider(2),
-          _buildStep(3, 'Confirm'),
+          _buildStep(2, 'Confirm'),
         ],
       ),
     );
@@ -80,10 +75,7 @@ class BookingStepHeader extends StatelessWidget {
         Container(
           width: 32,
           height: 32,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: circleColor,
-          ),
+          decoration: BoxDecoration(shape: BoxShape.circle, color: circleColor),
           alignment: Alignment.center,
           child: innerWidget,
         ),
@@ -99,7 +91,9 @@ class BookingStepHeader extends StatelessWidget {
       width: 48,
       height: 2,
       margin: const EdgeInsets.symmetric(horizontal: 8).copyWith(bottom: 20),
-      color: isCompleted ? ClinicQColors.primaryTeal : ClinicQColors.dividerMedium,
+      color: isCompleted
+          ? ClinicQColors.primaryTeal
+          : ClinicQColors.dividerMedium,
     );
   }
 }

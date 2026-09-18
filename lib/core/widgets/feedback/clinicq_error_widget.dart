@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../theme/clinic_q_colors.dart';
+import '../../../app/theme/clinic_q_colors.dart';
 
 class ClinicQErrorWidget extends StatelessWidget {
   const ClinicQErrorWidget({
@@ -21,8 +21,12 @@ class ClinicQErrorWidget extends StatelessWidget {
     final isDark = theme.brightness == Brightness.dark;
 
     // Dark mode fallback vs Light mode design tokens
-    final bg = isDark ? Colors.red.withOpacity(0.15) : ClinicQColors.errorBackground;
-    final border = isDark ? Colors.red.withOpacity(0.3) : ClinicQColors.errorBorder;
+    final bg = isDark
+        ? Colors.red.withOpacity(0.15)
+        : ClinicQColors.errorBackground;
+    final border = isDark
+        ? Colors.red.withOpacity(0.3)
+        : ClinicQColors.errorBorder;
     final text = isDark ? Colors.red.shade200 : ClinicQColors.errorText;
     final icon = isDark ? Colors.red.shade300 : ClinicQColors.errorIcon;
 
@@ -36,11 +40,7 @@ class ClinicQErrorWidget extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(
-            Icons.error_outline_rounded,
-            color: icon,
-            size: 20,
-          ),
+          Icon(Icons.error_outline_rounded, color: icon, size: 20),
           const SizedBox(width: 12),
           Expanded(
             child: Column(

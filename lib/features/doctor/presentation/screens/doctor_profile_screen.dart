@@ -2,7 +2,7 @@ import 'package:clinic_q/features/doctor/presentation/doctor_providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../../../core/theme/clinic_q_colors.dart';
+import '../../../../app/theme/clinic_q_colors.dart';
 import '../../../../core/widgets/buttons/clinicq_button.dart';
 import '../../../../core/widgets/buttons/bookmark_button.dart';
 import '../../../../core/widgets/feedback/skeleton_box.dart';
@@ -38,23 +38,27 @@ class DoctorProfileScreen extends ConsumerWidget {
               color: Colors.white,
               borderRadius: BorderRadius.circular(12),
             ),
-            child: BookmarkButton(
-              entityId: doctorId,
-              entityType: 'doctor',
-            ),
+            child: BookmarkButton(entityId: doctorId, entityType: 'doctor'),
           ),
         ],
       ),
       body: SafeArea(
         child: profileState.isLoading
             ? Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 12.0),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24.0,
+                  vertical: 12.0,
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
                       children: [
-                        const SkeletonBox(width: 90, height: 90, borderRadius: 45),
+                        const SkeletonBox(
+                          width: 90,
+                          height: 90,
+                          borderRadius: 45,
+                        ),
                         const SizedBox(width: 20),
                         Expanded(
                           child: Column(
@@ -79,7 +83,10 @@ class DoctorProfileScreen extends ConsumerWidget {
                     const SizedBox(height: 12),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: List.generate(3, (index) => const SkeletonBox(width: 90, height: 40)),
+                      children: List.generate(
+                        3,
+                        (index) => const SkeletonBox(width: 90, height: 40),
+                      ),
                     ),
                   ],
                 ),
@@ -88,7 +95,8 @@ class DoctorProfileScreen extends ConsumerWidget {
             ? Center(
                 child: ClinicQErrorWidget(
                   message: profileState.errorMessage ?? 'Doctor not found.',
-                  onRetry: () => ref.invalidate(doctorProfileViewModelProvider(doctorId)),
+                  onRetry: () =>
+                      ref.invalidate(doctorProfileViewModelProvider(doctorId)),
                 ),
               )
             : Column(
@@ -183,7 +191,7 @@ class DoctorProfileScreen extends ConsumerWidget {
                       onPressed: () {
                         final clinicId = profileState.doctor?.clinicId ?? '';
                         context.push(
-                          '/booking/token-info?doctorId=$doctorId&clinicId=$clinicId',
+                          '/booking/confirm?doctorId=$doctorId&clinicId=$clinicId',
                         );
                       },
                     ),

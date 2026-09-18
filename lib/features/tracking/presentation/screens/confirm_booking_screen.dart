@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../../core/theme/clinic_q_colors.dart';
+import '../../../../app/theme/clinic_q_colors.dart';
 import '../../../../core/widgets/feedback/clinicq_loader.dart';
 import '../../../../core/widgets/feedback/clinicq_error_widget.dart';
 import '../../../../core/widgets/buttons/clinicq_button.dart';
@@ -13,6 +13,7 @@ import '../widgets/doctor_queue_card.dart';
 import '../widgets/booking_detail_row.dart';
 import 'token_info_screen.dart';
 import 'booking_success_screen.dart';
+import 'tracking_screen.dart';
 
 class ConfirmBookingScreen extends ConsumerStatefulWidget {
   final String doctorId;
@@ -27,7 +28,8 @@ class ConfirmBookingScreen extends ConsumerStatefulWidget {
   });
 
   @override
-  ConsumerState<ConfirmBookingScreen> createState() => _ConfirmBookingScreenState();
+  ConsumerState<ConfirmBookingScreen> createState() =>
+      _ConfirmBookingScreenState();
 }
 
 class _ConfirmBookingScreenState extends ConsumerState<ConfirmBookingScreen> {
@@ -49,7 +51,7 @@ class _ConfirmBookingScreenState extends ConsumerState<ConfirmBookingScreen> {
       'Thursday',
       'Friday',
       'Saturday',
-      'Sunday'
+      'Sunday',
     ];
     final months = [
       'January',
@@ -63,7 +65,7 @@ class _ConfirmBookingScreenState extends ConsumerState<ConfirmBookingScreen> {
       'September',
       'October',
       'November',
-      'December'
+      'December',
     ];
     return '${weekdays[now.weekday - 1]}, ${now.day} ${months[now.month - 1]}';
   }
@@ -87,7 +89,9 @@ class _ConfirmBookingScreenState extends ConsumerState<ConfirmBookingScreen> {
       doctorId: widget.doctorId,
       clinicId: widget.clinicId,
       userId: currentUser.id,
-      notes: _notesController.text.trim().isEmpty ? null : _notesController.text.trim(),
+      notes: _notesController.text.trim().isEmpty
+          ? null
+          : _notesController.text.trim(),
     );
 
     if (!mounted) return;
@@ -97,12 +101,14 @@ class _ConfirmBookingScreenState extends ConsumerState<ConfirmBookingScreen> {
     });
 
     if (success) {
-      // Find the booked token
+      // Invalidate active token lookup to ensure it fetches the new token
+      ref.invalidate(activeTokenLookupProvider);
+
       final appState = ref.read(appointmentViewModelProvider);
       final bookedToken = appState.tokens.firstWhere(
         (t) => t.doctorId == widget.doctorId && t.clinicId == widget.clinicId,
       );
-      
+
       context.push(
         '/booking/success?doctorId=${widget.doctorId}&clinicId=${widget.clinicId}',
         extra: BookingSuccessParams(
@@ -115,7 +121,9 @@ class _ConfirmBookingScreenState extends ConsumerState<ConfirmBookingScreen> {
       final appState = ref.read(appointmentViewModelProvider);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(appState.errorMessage ?? 'Booking failed. Please try again.'),
+          content: Text(
+            appState.errorMessage ?? 'Booking failed. Please try again.',
+          ),
           backgroundColor: ClinicQColors.errorIcon,
         ),
       );
@@ -131,7 +139,10 @@ class _ConfirmBookingScreenState extends ConsumerState<ConfirmBookingScreen> {
       return _buildContent(widget.initialData!, todayStr);
     }
 
-    final params = TokenInfoParams(doctorId: widget.doctorId, clinicId: widget.clinicId);
+    final params = TokenInfoParams(
+      doctorId: widget.doctorId,
+      clinicId: widget.clinicId,
+    );
     final dataAsync = ref.watch(tokenInfoLoaderProvider(params));
 
     return Scaffold(
@@ -188,7 +199,7 @@ class _ConfirmBookingScreenState extends ConsumerState<ConfirmBookingScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 24.0),
                 child: Column(
                   children: [
-                    const BookingStepHeader(currentStep: 3),
+                    const BookingStepHeader(currentStep: 2),
                     const SizedBox(height: 12),
                     // Details container card
                     Container(
@@ -244,7 +255,8 @@ class _ConfirmBookingScreenState extends ConsumerState<ConfirmBookingScreen> {
                                     ),
                                     BookingDetailRow(
                                       label: 'Patients Ahead',
-                                      value: preview.patientsAheadCount.toString(),
+                                      value: preview.patientsAheadCount
+                                          .toString(),
                                     ),
                                     BookingDetailRow(
                                       label: 'Est. Wait',
@@ -252,7 +264,8 @@ class _ConfirmBookingScreenState extends ConsumerState<ConfirmBookingScreen> {
                                     ),
                                     BookingDetailRow(
                                       label: 'Timings',
-                                      value: '${doctor.startTime ?? "9:00 AM"} – ${doctor.endTime ?? "2:00 PM"}',
+                                      value:
+                                          '${doctor.startTime ?? "9:00 AM"} – ${doctor.endTime ?? "2:00 PM"}',
                                     ),
                                     BookingDetailRow(
                                       label: 'Queue Status',
@@ -268,11 +281,13 @@ class _ConfirmBookingScreenState extends ConsumerState<ConfirmBookingScreen> {
                                     vertical: 12,
                                   ),
                                   decoration: BoxDecoration(
-                                    color: ClinicQColors.availableBadgeBackground,
+                                    color:
+                                        ClinicQColors.availableBadgeBackground,
                                     borderRadius: BorderRadius.circular(12),
                                   ),
                                   child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
                                     children: [
                                       const Text(
                                         'Consultation Fee',
@@ -285,7 +300,8 @@ class _ConfirmBookingScreenState extends ConsumerState<ConfirmBookingScreen> {
                                       Text(
                                         'PKR ${doctor.price.toInt()}',
                                         style: const TextStyle(
-                                          color: ClinicQColors.availableBadgeText,
+                                          color:
+                                              ClinicQColors.availableBadgeText,
                                           fontSize: 18,
                                           fontWeight: FontWeight.bold,
                                         ),
@@ -364,8 +380,7 @@ class _ConfirmBookingScreenState extends ConsumerState<ConfirmBookingScreen> {
                     // Change doctor text link
                     GestureDetector(
                       onTap: () {
-                        context.pop(); // Returns to TokenInfoScreen
-                        context.pop(); // Returns to Profile or Clinic selector
+                        context.pop(); // Returns to Doctor Profile or Clinic selector
                       },
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -395,7 +410,11 @@ class _ConfirmBookingScreenState extends ConsumerState<ConfirmBookingScreen> {
             Padding(
               padding: const EdgeInsets.all(24.0),
               child: _isSubmitting
-                  ? const Center(child: CircularProgressIndicator(color: ClinicQColors.primaryTeal))
+                  ? const Center(
+                      child: CircularProgressIndicator(
+                        color: ClinicQColors.primaryTeal,
+                      ),
+                    )
                   : ClinicQButton(
                       label: 'Confirm Appointment',
                       gradient: ClinicQColors.gradientPrimary,

@@ -1,17 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../../../core/theme/clinic_q_colors.dart';
+import '../../../../app/theme/clinic_q_colors.dart';
 import '../ratings_providers.dart';
 import '../widgets/review_card.dart';
 
 class AllReviewsScreen extends ConsumerWidget {
   final String doctorId;
 
-  const AllReviewsScreen({
-    super.key,
-    required this.doctorId,
-  });
+  const AllReviewsScreen({super.key, required this.doctorId});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -38,23 +35,21 @@ class AllReviewsScreen extends ConsumerWidget {
       body: SafeArea(
         child: reviewsState.isLoading
             ? const Center(
-                child: CircularProgressIndicator(color: ClinicQColors.primaryTeal),
+                child: CircularProgressIndicator(
+                  color: ClinicQColors.primaryTeal,
+                ),
               )
             : reviewsState.errorMessage != null
-                ? Center(
-                    child: Text(reviewsState.errorMessage!),
-                  )
-                : reviewsState.reviews.isEmpty
-                    ? const Center(
-                        child: Text('No reviews found.'),
-                      )
-                    : ListView.builder(
-                        padding: const EdgeInsets.all(24.0),
-                        itemCount: reviewsState.reviews.length,
-                        itemBuilder: (context, index) {
-                          return ReviewCard(review: reviewsState.reviews[index]);
-                        },
-                      ),
+            ? Center(child: Text(reviewsState.errorMessage!))
+            : reviewsState.reviews.isEmpty
+            ? const Center(child: Text('No reviews found.'))
+            : ListView.builder(
+                padding: const EdgeInsets.all(24.0),
+                itemCount: reviewsState.reviews.length,
+                itemBuilder: (context, index) {
+                  return ReviewCard(review: reviewsState.reviews[index]);
+                },
+              ),
       ),
     );
   }

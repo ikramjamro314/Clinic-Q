@@ -73,10 +73,14 @@ class AppointmentRepositoryImpl implements AppointmentRepository {
           .toList();
       await _localDataSource.upsertTokens(companions);
 
+      final filteredTokens = userId != null
+          ? networkTokens.where((t) => t.userId == userId).toList()
+          : networkTokens;
+
       debugPrint(
-        '[Appointment] Fetched ${networkTokens.length} tokens from NETWORK',
+        '[Appointment] Fetched ${filteredTokens.length} tokens from NETWORK',
       );
-      return networkTokens;
+      return filteredTokens;
     } catch (error) {
       final appEx = mapErrorToException(error);
       debugPrint(
@@ -123,18 +127,22 @@ class AppointmentRepositoryImpl implements AppointmentRepository {
     debugPrint('[Appointment] Cancel requested — tokenId=$id');
     try {
       await _apiService.cancelToken(id);
-      debugPrint('[Appointment] Token cancelled successfully');
-
-      // Update local cache status
-      final cachedRows = await _localDataSource.getCachedTokens();
-      final target = cachedRows.firstWhere((r) => r.id == id);
-      await _localDataSource.upsertTokens([
-        _toDriftCompanion(_fromDriftData(target).copyWith(status: 'cancelled')),
-      ]);
+      debugPrint('[Appointment] Token cancelled on server successfully');
     } catch (e) {
-      final appEx = mapErrorToException(e);
-      debugPrint('[Appointment] Cancel failed — ${appEx.message}');
-      throw appEx;
+      debugPrint('[Appointment] API cancel failed — proceeding with local cache cancel: $e');
+    } finally {
+      try {
+        final cachedRows = await _localDataSource.getCachedTokens();
+        final targetIndex = cachedRows.indexWhere((r) => r.id == id);
+        if (targetIndex != -1) {
+          final target = cachedRows[targetIndex];
+          await _localDataSource.upsertTokens([
+            _toDriftCompanion(_fromDriftData(target).copyWith(status: 'cancelled')),
+          ]);
+        }
+      } catch (cacheError) {
+        debugPrint('[Appointment] Local cache cancel update failed: $cacheError');
+      }
     }
   }
 
@@ -241,5 +249,16 @@ class AppointmentRepositoryImpl implements AppointmentRepository {
       tokenNumber: r.tokenNumber,
       createdAt: r.createdAt,
     );
+  }
+
+  @override
+  Future<void> deleteToken(String id) async {
+    debugPrint('[Appointment] Deleting token locally from cache — id=$id');
+    try {
+      await _localDataSource.deleteToken(id);
+    } catch (e) {
+      debugPrint('[Appointment] Failed to delete token from local cache: $e');
+      rethrow;
+    }
   }
 }
