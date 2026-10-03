@@ -5,16 +5,38 @@ import 'filter_state.dart';
 class FilterViewModel extends Notifier<FilterState> {
   @override
   FilterState build() {
-    Future.microtask(_loadSpecialties);
+    Future.microtask(_loadSpecialtiesAndSync);
     return const FilterState(isLoading: true);
   }
 
-  Future<void> _loadSpecialties() async {
+  Future<void> _loadSpecialtiesAndSync() async {
     state = state.copyWith(isLoading: true).clearError();
     try {
       final repository = ref.read(doctorRepositoryProvider);
       final specialties = await repository.getSpecialties();
-      state = state.copyWith(isLoading: false, specialties: specialties);
+
+      // Read active filters from doctorViewModelProvider
+      final activeFilters = ref.read(doctorViewModelProvider).filters;
+      final activeNames =
+          (activeFilters['specialties'] as List<String>?) ??
+          (activeFilters['specialization'] != null
+              ? [activeFilters['specialization'] as String]
+              : <String>[]);
+
+      final initialSelectedIds = <String>{};
+      for (final spec in specialties) {
+        if (activeNames.any(
+          (n) => n.toLowerCase() == spec.name.toLowerCase(),
+        )) {
+          initialSelectedIds.add(spec.id);
+        }
+      }
+
+      state = state.copyWith(
+        isLoading: false,
+        specialties: specialties,
+        selectedSpecialtyIds: initialSelectedIds,
+      );
     } catch (e) {
       state = state.copyWith(
         isLoading: false,

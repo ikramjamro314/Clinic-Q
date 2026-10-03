@@ -31,6 +31,23 @@ class FilterScreen extends ConsumerWidget {
             color: ClinicQColors.textPrimary,
           ),
         ),
+        actions: [
+          if (filterState.selectedSpecialtyIds.isNotEmpty)
+            TextButton(
+              onPressed: () {
+                ref.read(filterViewModelProvider.notifier).clearFilters();
+              },
+              child: const Text(
+                'Clear all',
+                style: TextStyle(
+                  color: ClinicQColors.primaryTeal,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 14,
+                ),
+              ),
+            ),
+          const SizedBox(width: 8),
+        ],
       ),
       body: SafeArea(
         child: Column(
@@ -69,9 +86,22 @@ class FilterScreen extends ConsumerWidget {
             Padding(
               padding: const EdgeInsets.all(24.0),
               child: ClinicQButton(
-                label: 'Apply filter',
+                label: filterState.selectedSpecialtyIds.isEmpty
+                    ? 'Show All Doctors'
+                    : 'Apply filter (${filterState.selectedSpecialtyIds.length})',
                 onPressed: () {
-                  // TODO: Pass selected filters back to parent screen or update global state
+                  final selectedNames = filterState.specialties
+                      .where(
+                        (s) => filterState.selectedSpecialtyIds.contains(s.id),
+                      )
+                      .map((s) => s.name)
+                      .toList();
+
+                  ref.read(doctorViewModelProvider.notifier).applyFilters({
+                    if (selectedNames.isNotEmpty) 'specialties': selectedNames,
+                    if (selectedNames.isNotEmpty)
+                      'specialization': selectedNames.first,
+                  });
                   context.pop();
                 },
               ),

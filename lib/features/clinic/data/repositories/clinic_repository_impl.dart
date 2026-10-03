@@ -27,28 +27,43 @@ class ClinicRepositoryImpl implements ClinicRepository {
     String? city,
     String? specialty,
     String? search,
+    bool forceRefresh = false,
   }) async {
     final cachedRows = await _localDataSource.getCachedClinics();
-    if (cachedRows.isNotEmpty && _isCacheValid(cachedRows.first.cachedAt)) {
-      debugPrint('[ClinicRepository] Cache is fresh (<24h) — serving from CACHE');
+    if (!forceRefresh &&
+        cachedRows.isNotEmpty &&
+        _isCacheValid(cachedRows.first.cachedAt)) {
+      debugPrint(
+        '[ClinicRepository] Cache is fresh (<24h) — serving from CACHE',
+      );
       var cachedEntities = cachedRows.map((r) => _fromDriftData(r)).toList();
 
       // Perform client-side filtering on cached clinics when cache is valid
       if (city != null && city.trim().isNotEmpty) {
         final queryCity = city.trim().toLowerCase();
-        cachedEntities = cachedEntities.where((c) => c.city?.toLowerCase() == queryCity).toList();
+        cachedEntities = cachedEntities
+            .where((c) => c.city?.toLowerCase() == queryCity)
+            .toList();
       }
       if (specialty != null && specialty.trim().isNotEmpty) {
         final querySpec = specialty.trim().toLowerCase();
-        cachedEntities = cachedEntities.where((c) =>
-            c.specialtyTag.toLowerCase() == querySpec ||
-            c.specialties.any((s) => s.toLowerCase() == querySpec)).toList();
+        cachedEntities = cachedEntities
+            .where(
+              (c) =>
+                  c.specialtyTag.toLowerCase() == querySpec ||
+                  c.specialties.any((s) => s.toLowerCase() == querySpec),
+            )
+            .toList();
       }
       if (search != null && search.trim().isNotEmpty) {
         final querySearch = search.trim().toLowerCase();
-        cachedEntities = cachedEntities.where((c) =>
-            c.name.toLowerCase().contains(querySearch) ||
-            c.address.toLowerCase().contains(querySearch)).toList();
+        cachedEntities = cachedEntities
+            .where(
+              (c) =>
+                  c.name.toLowerCase().contains(querySearch) ||
+                  c.address.toLowerCase().contains(querySearch),
+            )
+            .toList();
       }
 
       return cachedEntities;
@@ -61,15 +76,26 @@ class ClinicRepositoryImpl implements ClinicRepository {
         search: search,
       );
 
-      // Cache fresh data in SQLite
-      final companions = networkClinics.map((c) => _toDriftCompanion(c)).toList();
-      await _localDataSource.upsertClinics(companions);
+      final hasActiveFilter =
+          (city != null && city.trim().isNotEmpty) ||
+          (specialty != null && specialty.trim().isNotEmpty) ||
+          (search != null && search.trim().isNotEmpty);
 
-      debugPrint('[ClinicRepository] Fetched from NETWORK — ${networkClinics.length} items');
+      if (!hasActiveFilter) {
+        final companions = networkClinics
+            .map((c) => _toDriftCompanion(c))
+            .toList();
+        await _localDataSource.upsertClinics(companions);
+        debugPrint(
+          '[ClinicRepository] Fetched from NETWORK and updated cache — ${networkClinics.length} items',
+        );
+      }
       return networkClinics;
     } catch (error) {
       final appEx = mapErrorToException(error);
-      debugPrint('[ClinicRepository] NETWORK failed — falling back to CACHE: $appEx');
+      debugPrint(
+        '[ClinicRepository] NETWORK failed — falling back to CACHE: $appEx',
+      );
 
       if (cachedRows.isNotEmpty) {
         var cachedEntities = cachedRows.map((r) => _fromDriftData(r)).toList();
@@ -77,27 +103,41 @@ class ClinicRepositoryImpl implements ClinicRepository {
         // Perform client-side filtering on cached clinics when offline
         if (city != null && city.trim().isNotEmpty) {
           final queryCity = city.trim().toLowerCase();
-          cachedEntities = cachedEntities.where((c) => c.city?.toLowerCase() == queryCity).toList();
+          cachedEntities = cachedEntities
+              .where((c) => c.city?.toLowerCase() == queryCity)
+              .toList();
         }
         if (specialty != null && specialty.trim().isNotEmpty) {
           final querySpec = specialty.trim().toLowerCase();
-          cachedEntities = cachedEntities.where((c) =>
-              c.specialtyTag.toLowerCase() == querySpec ||
-              c.specialties.any((s) => s.toLowerCase() == querySpec)).toList();
+          cachedEntities = cachedEntities
+              .where(
+                (c) =>
+                    c.specialtyTag.toLowerCase() == querySpec ||
+                    c.specialties.any((s) => s.toLowerCase() == querySpec),
+              )
+              .toList();
         }
         if (search != null && search.trim().isNotEmpty) {
           final querySearch = search.trim().toLowerCase();
-          cachedEntities = cachedEntities.where((c) =>
-              c.name.toLowerCase().contains(querySearch) ||
-              c.address.toLowerCase().contains(querySearch)).toList();
+          cachedEntities = cachedEntities
+              .where(
+                (c) =>
+                    c.name.toLowerCase().contains(querySearch) ||
+                    c.address.toLowerCase().contains(querySearch),
+              )
+              .toList();
         }
 
         if (cachedEntities.isNotEmpty) {
           final flaggedEntities = cachedEntities
-              .map((c) => c.copyWith(isFromCache: true, cacheError: appEx.message))
+              .map(
+                (c) => c.copyWith(isFromCache: true, cacheError: appEx.message),
+              )
               .toList();
           final cachedAtTime = cachedRows.first.cachedAt.toIso8601String();
-          debugPrint('[ClinicRepository] Returned ${flaggedEntities.length} items from CACHE (cachedAt: $cachedAtTime)');
+          debugPrint(
+            '[ClinicRepository] Returned ${flaggedEntities.length} items from CACHE (cachedAt: $cachedAtTime)',
+          );
           return flaggedEntities;
         }
       }
@@ -107,18 +147,29 @@ class ClinicRepositoryImpl implements ClinicRepository {
   }
 
   @override
-  Future<ClinicEntity?> getClinicById(String id) async {
+  Future<ClinicEntity?> getClinicById(
+    String id, {
+    bool forceRefresh = false,
+  }) async {
     final cachedRow = await _localDataSource.getCachedClinicById(id);
-    if (cachedRow != null && _isCacheValid(cachedRow.cachedAt)) {
-      debugPrint('[ClinicRepository] Clinic $id cache is fresh (<24h) — serving from CACHE');
+    if (!forceRefresh &&
+        cachedRow != null &&
+        _isCacheValid(cachedRow.cachedAt)) {
+      debugPrint(
+        '[ClinicRepository] Clinic $id cache is fresh (<24h) — serving from CACHE',
+      );
       return _fromDriftData(cachedRow);
     }
 
     try {
       final networkClinic = await _service.getClinicById(id);
       if (networkClinic != null) {
-        await _localDataSource.upsertClinics([_toDriftCompanion(networkClinic)]);
-        debugPrint('[ClinicRepository] Fetched from NETWORK for ID $id');
+        await _localDataSource.upsertClinics([
+          _toDriftCompanion(networkClinic),
+        ]);
+        debugPrint(
+          '[ClinicRepository] Fetched from NETWORK and updated cache for ID $id',
+        );
       }
       return networkClinic;
     } catch (error) {
@@ -126,11 +177,12 @@ class ClinicRepositoryImpl implements ClinicRepository {
       debugPrint('[ClinicRepository] NETWORK failed — falling back to CACHE');
 
       if (cachedRow != null) {
-        final entity = _fromDriftData(cachedRow).copyWith(
-          isFromCache: true,
-          cacheError: appEx.message,
+        final entity = _fromDriftData(
+          cachedRow,
+        ).copyWith(isFromCache: true, cacheError: appEx.message);
+        debugPrint(
+          '[ClinicRepository] Returned 1 item from CACHE (cachedAt: ${cachedRow.cachedAt.toIso8601String()})',
         );
-        debugPrint('[ClinicRepository] Returned 1 item from CACHE (cachedAt: ${cachedRow.cachedAt.toIso8601String()})');
         return entity;
       }
 
@@ -217,4 +269,3 @@ class ClinicRepositoryImpl implements ClinicRepository {
     );
   }
 }
-

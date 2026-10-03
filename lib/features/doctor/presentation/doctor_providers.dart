@@ -12,6 +12,7 @@ import 'viewmodels/doctor_view_model.dart';
 import '../../../core/network/dio_client.dart';
 import '../data/services/doctor_api_service.dart';
 
+import '../../clinic/presentation/clinic_providers.dart';
 import '../../../core/local/app_database.dart';
 import '../data/local/doctor_local_data_source.dart';
 
@@ -28,7 +29,8 @@ final doctorApiServiceProvider = Provider<DoctorApiService>((ref) {
 final doctorRepositoryProvider = Provider<DoctorRepository>((ref) {
   final service = ref.watch(doctorApiServiceProvider);
   final localDataSource = ref.watch(doctorLocalDataSourceProvider);
-  return DoctorRepositoryImpl(service, localDataSource);
+  final clinicLocalDataSource = ref.watch(clinicLocalDataSourceProvider);
+  return DoctorRepositoryImpl(service, localDataSource, clinicLocalDataSource);
 });
 
 final doctorViewModelProvider = NotifierProvider<DoctorNotifier, DoctorState>(
@@ -41,6 +43,7 @@ final doctorProfileViewModelProvider = NotifierProvider.family<
   DoctorProfileViewModel.new,
 );
 
-final filterViewModelProvider = NotifierProvider<FilterViewModel, FilterState>(
+final filterViewModelProvider =
+    NotifierProvider.autoDispose<FilterViewModel, FilterState>(
   FilterViewModel.new,
 );

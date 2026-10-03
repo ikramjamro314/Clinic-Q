@@ -26,44 +26,129 @@ final trackingDoctorProvider = FutureProvider.family<DoctorEntity?, String>((
   tokenId,
 ) async {
   try {
+    // 1. Check in-memory tokens
+    final inMemTokens = ref.read(appointmentViewModelProvider).tokens;
+    final inMemToken = inMemTokens.where((t) => t.id == tokenId).firstOrNull;
+    if (inMemToken != null && inMemToken.doctorId.isNotEmpty) {
+      return ref.read(doctorRepositoryProvider).getDoctorById(inMemToken.doctorId);
+    }
+
+    // 2. Check repository tokens
     final tokens = await ref.read(appointmentRepositoryProvider).getTokens();
-    final token = tokens.firstWhere((t) => t.id == tokenId);
-    return ref.read(doctorRepositoryProvider).getDoctorById(token.doctorId);
+    final token = tokens.where((t) => t.id == tokenId).firstOrNull;
+    if (token != null && token.doctorId.isNotEmpty) {
+      return ref.read(doctorRepositoryProvider).getDoctorById(token.doctorId);
+    }
+
+    // 3. Fallback to cached tokens in SQLite
+    final cached = await ref.read(tokensLocalDataSourceProvider).getCachedTokens();
+    final cachedToken = cached.where((t) => t.id == tokenId).firstOrNull;
+    if (cachedToken != null && cachedToken.doctorId.isNotEmpty) {
+      return ref.read(doctorRepositoryProvider).getDoctorById(cachedToken.doctorId);
+    }
   } catch (e) {
     debugPrint('[Tracking] Failed to resolve doctor for tokenId=$tokenId: $e');
-    return null;
   }
+  return null;
 });
 
 /// Checks if there is an active token for the current user (strictly latest active appointment)
-final activeTokenLookupProvider = FutureProvider<Token?>((ref) async {
+final activeTokenLookupProvider = FutureProvider.autoDispose<Token?>((ref) async {
+  // Watch appointmentViewModelProvider so newly booked / fetched tokens trigger immediate re-eval
+  final appState = ref.watch(appointmentViewModelProvider);
   final currentUser = ref.watch(authRepositoryProvider).getCurrentUser();
-  if (currentUser == null) return null;
 
+  bool isTokenActive(Token t) {
+    final s = t.status.toLowerCase().trim();
+    return s != 'completed' &&
+        s != 'cancelled' &&
+        s != 'canceled' &&
+        s != 'done' &&
+        s != 'rejected' &&
+        s != 'missed' &&
+        s != 'expired';
+  }
+
+  // 1. Check in-memory state first
+  if (appState.tokens.isNotEmpty) {
+    final activeList = appState.tokens.where((t) {
+      if (!isTokenActive(t)) return false;
+      if (currentUser != null && t.userId.isNotEmpty && t.userId != currentUser.id) {
+        return false;
+      }
+      return true;
+    }).toList();
+
+    if (activeList.isNotEmpty) {
+      activeList.sort((a, b) => (b.createdAt ?? '').compareTo(a.createdAt ?? ''));
+      return activeList.first;
+    }
+  }
+
+  // 2. Fetch from repository (network + cache)
   try {
     final tokens = await ref
         .read(appointmentRepositoryProvider)
-        .getTokens(userId: currentUser.id);
+        .getTokens(userId: currentUser?.id);
 
-    final userActiveTokens = tokens
-        .where(
-          (t) =>
-              t.userId == currentUser.id &&
-              t.status != 'completed' &&
-              t.status != 'cancelled',
-        )
-        .toList();
+    final userActiveTokens = tokens.where((t) {
+      if (!isTokenActive(t)) return false;
+      if (currentUser != null && t.userId.isNotEmpty && t.userId != currentUser.id) {
+        return false;
+      }
+      return true;
+    }).toList();
 
     if (userActiveTokens.isNotEmpty) {
-      // Sort descending by creation date to get the single latest active appointment
       userActiveTokens.sort(
         (a, b) => (b.createdAt ?? '').compareTo(a.createdAt ?? ''),
       );
       return userActiveTokens.first;
     }
   } catch (e) {
-    debugPrint('[Tracking] Error looking up active token: $e');
+    debugPrint('[Tracking] Error looking up active token from network: $e');
   }
+
+  // 3. Fallback to local DB cache directly
+  try {
+    final cached = await ref.read(tokensLocalDataSourceProvider).getCachedTokens();
+    if (cached.isNotEmpty) {
+      final activeCached = cached.where((r) {
+        final s = r.status.toLowerCase().trim();
+        final isActive = s != 'completed' &&
+            s != 'cancelled' &&
+            s != 'canceled' &&
+            s != 'done' &&
+            s != 'rejected' &&
+            s != 'missed' &&
+            s != 'expired';
+        if (!isActive) return false;
+        if (currentUser != null && r.userId.isNotEmpty && r.userId != currentUser.id) {
+          return false;
+        }
+        return true;
+      }).toList();
+
+      if (activeCached.isNotEmpty) {
+        activeCached.sort((a, b) => (b.createdAt ?? '').compareTo(a.createdAt ?? ''));
+        final r = activeCached.first;
+        return Token(
+          id: r.id,
+          doctorId: r.doctorId,
+          clinicId: r.clinicId,
+          userId: r.userId,
+          notes: r.notes,
+          status: r.status,
+          tokenNumber: r.tokenNumber,
+          createdAt: r.createdAt,
+          isFromCache: true,
+        );
+      }
+    }
+  } catch (e) {
+    debugPrint('[Tracking] Local cache token lookup error: $e');
+  }
+
   return null;
 });
 
@@ -373,6 +458,7 @@ class _TrackingBody extends ConsumerWidget {
                           // 3. Horizontal Visual Lineup of Queue
                           TrackingQueueLineup(
                             snapshot: trackingState.snapshot!,
+                            doctor: doctorAsync.value,
                           ),
                           const SizedBox(height: 24),
 

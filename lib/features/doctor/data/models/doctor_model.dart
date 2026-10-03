@@ -35,33 +35,34 @@ class DoctorModel extends DoctorEntity {
   }
 
   factory DoctorModel.fromJson(Map<String, dynamic> json) {
-    final rawWorkingDays = _parseList(json['workingDays']);
-    
-    // Map qualification to about or fallback to mock
-    final computedAbout = json['qualification'] as String? ?? json['about'] as String? ?? 'No details available.';
+    final rawWorkingDays = json['workingDays'] is List
+        ? List<String>.from(json['workingDays'] as List)
+        : const <String>[];
     final clinicIdVal = json['clinicId'] as String?;
 
     return DoctorModel(
-      id: json['id'] as String? ?? json['_id'] as String? ?? '',
+      id: json['id'] as String? ?? '',
       name: json['name'] as String? ?? '',
-      specialty: json['specialization'] as String? ?? json['specialty'] as String? ?? 'General',
-      clinicName: json['clinic_name'] as String? ?? (clinicIdVal != null ? 'Clinic ${clinicIdVal.substring(0, 4)}' : 'Clinic'),
-      photoUrl: json['image'] as String? ?? json['photo_url'] as String?,
-      rating: (json['rating'] as num?)?.toDouble() ?? 4.5,
-      reviewCount: (json['review_count'] as num?)?.toInt() ?? 80,
-      price: (json['consultationFee'] as num?)?.toDouble() ?? (json['price'] as num?)?.toDouble() ?? 1000.0,
-      durationMinutes: (json['avgServiceDuration'] as num?)?.toInt() ?? (json['duration_minutes'] as num?)?.toInt() ?? 15,
-      isInterested: json['is_interested'] as bool? ?? false,
-      isAvailable: json['is_available'] as bool? ?? true,
-      about: computedAbout,
-      location: json['location'] as String? ?? 'Pakistan',
+      specialty: json['specialization'] as String? ?? 'General',
+      clinicName: clinicIdVal != null
+          ? 'Clinic ${clinicIdVal.substring(0, 4)}'
+          : 'Clinic',
+      photoUrl: json['image'] as String?,
+      rating: (json['rating'] as num?)?.toDouble() ?? 4.9,
+      reviewCount: 80,
+      price: (json['consultationFee'] as num?)?.toDouble() ?? 2500.0,
+      durationMinutes: (json['avgServiceDuration'] as num?)?.toInt() ?? 20,
+      isInterested: false,
+      isAvailable: true,
+      about: json['qualification'] as String? ?? 'Specialist Physician',
+      location: 'Pakistan',
       clinicId: clinicIdVal,
       qualification: json['qualification'] as String?,
       experience: (json['experience'] as num?)?.toInt(),
       workingDays: rawWorkingDays,
       startTime: json['startTime'] as String?,
       endTime: json['endTime'] as String?,
-      maxTokensPerDay: (json['maxTokensPerDay'] as num?)?.toInt(),
+      maxTokensPerDay: (json['maxTokensPerDay'] as num?)?.toInt() ?? 30,
     );
   }
 
@@ -115,4 +116,3 @@ class DoctorModel extends DoctorEntity {
     );
   }
 }
-

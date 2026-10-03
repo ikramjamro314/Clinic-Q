@@ -11,6 +11,7 @@ class TrackingSnapshot {
   final String status;
   final DateTime lastSyncedAt;
   final List<Token> fullTokenList;
+  final int? maxTokens;
 
   // Cache-aside / stale status flags
   final bool isFromCache;
@@ -25,6 +26,7 @@ class TrackingSnapshot {
     required this.status,
     required this.lastSyncedAt,
     this.fullTokenList = const [],
+    this.maxTokens,
     this.isFromCache = false,
     this.isStale = false,
   });
@@ -38,6 +40,7 @@ class TrackingSnapshot {
     String? status,
     DateTime? lastSyncedAt,
     List<Token>? fullTokenList,
+    int? maxTokens,
     bool? isFromCache,
     bool? isStale,
   }) {
@@ -50,6 +53,7 @@ class TrackingSnapshot {
       status: status ?? this.status,
       lastSyncedAt: lastSyncedAt ?? this.lastSyncedAt,
       fullTokenList: fullTokenList ?? this.fullTokenList,
+      maxTokens: maxTokens ?? this.maxTokens,
       isFromCache: isFromCache ?? this.isFromCache,
       isStale: isStale ?? this.isStale,
     );

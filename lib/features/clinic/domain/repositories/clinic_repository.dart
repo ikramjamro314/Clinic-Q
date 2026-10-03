@@ -6,9 +6,10 @@ abstract class ClinicRepository {
     String? city,
     String? specialty,
     String? search,
+    bool forceRefresh = false,
   });
 
   /// Fetches a single clinic by ID
-  Future<ClinicEntity?> getClinicById(String id);
+  Future<ClinicEntity?> getClinicById(String id, {bool forceRefresh = false});
 }
 

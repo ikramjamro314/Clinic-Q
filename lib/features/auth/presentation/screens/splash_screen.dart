@@ -32,10 +32,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
       curve: Curves.easeOutBack,
     );
 
-    _fadeAnimation = CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeIn,
-    );
+    _fadeAnimation = CurvedAnimation(parent: _controller, curve: Curves.easeIn);
 
     _controller.forward();
 
@@ -82,9 +79,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
           children: [
             // Concentric background circles glow
             Positioned.fill(
-              child: CustomPaint(
-                painter: _ConcentricCirclesPainter(),
-              ),
+              child: CustomPaint(painter: _ConcentricCirclesPainter()),
             ),
 
             // Center content: Logo container, App Name, Tagline
@@ -136,7 +131,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                   FadeTransition(
                     opacity: _fadeAnimation,
                     child: Text(
-                      'SMART CLINIC SCHEDULING',
+                      'SMART CLINIC SYSTEM',
                       style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w600,
@@ -182,4 +177,3 @@ class _ConcentricCirclesPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
-

@@ -14,13 +14,13 @@ class DoctorProfileViewModel extends Notifier<DoctorProfileState> {
     return const DoctorProfileState(isLoading: true);
   }
 
-  Future<void> _loadDoctorData(String doctorId) async {
+  Future<void> _loadDoctorData(String doctorId, {bool forceRefresh = false}) async {
     state = state.copyWith(isLoading: true).clearError();
     try {
       final repository = ref.read(doctorRepositoryProvider);
 
       // Fetch doctor details
-      final doctor = await repository.getDoctorById(doctorId);
+      final doctor = await repository.getDoctorById(doctorId, forceRefresh: forceRefresh);
 
       if (doctor == null) {
         state = state.copyWith(
@@ -48,5 +48,9 @@ class DoctorProfileViewModel extends Notifier<DoctorProfileState> {
         errorMessage: appEx.message,
       );
     }
+  }
+
+  Future<void> refresh() async {
+    await _loadDoctorData(doctorId, forceRefresh: true);
   }
 }

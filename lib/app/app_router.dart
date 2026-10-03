@@ -15,6 +15,7 @@ import '../features/auth/presentation/screens/onboarding_screen.dart';
 import '../features/auth/presentation/screens/clinic_marketing_screen.dart';
 import '../features/auth/presentation/screens/role_selection_screen.dart';
 import '../features/auth/presentation/screens/login_screen.dart';
+import '../features/auth/presentation/screens/walk_in_entry_screen.dart';
 import '../features/auth/presentation/screens/otp_verification_screen.dart';
 import '../features/auth/presentation/screens/profile_details_screen.dart';
 import '../features/profile/presentation/screens/profile_screen.dart';
@@ -60,7 +61,7 @@ final routerProvider = Provider<GoRouter>((ref) {
           state.matchedLocation == AppRoutes.walkInEntry;
 
       if (!isAuthenticated) {
-        if (!isAuthRoute) {
+        if (!isAuthRoute && !state.matchedLocation.startsWith('/tracking')) {
           return AppRoutes.splash;
         }
         return null;
@@ -123,7 +124,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: AppRoutes.walkInEntry,
         pageBuilder: (context, state) => buildPageWithTransition(
           state: state,
-          child: const LoginScreen(),
+          child: const WalkInEntryScreen(),
           transitionType: AppTransitionType.slideLeft,
         ),
       ),

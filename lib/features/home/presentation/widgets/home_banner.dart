@@ -18,97 +18,91 @@ class HomeBanner extends StatelessWidget {
 
     return GestureDetector(
       onTap: onTap,
-      child: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          // Banner Card
-          Container(
-            width: double.infinity,
-            height: 170,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(20),
-              gradient: ClinicQColors.gradientBanner,
-              boxShadow: [
-                BoxShadow(
-                  color: const Color(0xFF0F766E).withOpacity(0.25),
-                  blurRadius: 15,
-                  offset: const Offset(0, 8),
-                ),
-              ],
+      child: Container(
+        width: double.infinity,
+        height: 170,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(20),
+          gradient: ClinicQColors.gradientBanner,
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF0F766E).withOpacity(0.25),
+              blurRadius: 15,
+              offset: const Offset(0, 8),
             ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(20),
-              child: Stack(
-                children: [
-                  // Background organic decorative wave curves
-                  Positioned.fill(
-                    child: CustomPaint(painter: _BannerWavePainter()),
-                  ),
-
-                  // Banner Content
-                  Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 20.0,
-                      vertical: 16.0,
-                    ),
-                    child: FractionallySizedBox(
-                      widthFactor: 0.6,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          // Badge / Header tag
-                          Text(
-                            badgeText,
-                            style: const TextStyle(
-                              color: Colors.white70,
-                              fontSize: 11,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-
-                          // Main bold call-to-action title
-                          Text(
-                            title,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 20,
-                              fontWeight: FontWeight.w800,
-                              height: 1.25,
-                              letterSpacing: -0.3,
-                            ),
-                          ),
-
-                          // Bottom statistic tag
-                          Text(
-                            patientCountText,
-                            style: TextStyle(
-                              color: Colors.white.withOpacity(0.85),
-                              fontSize: 11,
-                              fontWeight: FontWeight.w600,
-                              height: 1.2,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(20),
+          child: Stack(
+            children: [
+              // Background organic decorative wave curves
+              Positioned.fill(
+                child: CustomPaint(painter: _BannerWavePainter()),
               ),
-            ),
-          ),
 
-          // Doctor Image bleeding out bottom-right
-          Positioned(
-            right: 8,
-            bottom: -12,
-            child: Image.asset(
-              'assets/images/doctor.png',
-              height: 182,
-              fit: BoxFit.contain,
-            ),
+              // Doctor Image fitted inside banner
+              Positioned(
+                right: 8,
+                bottom: 0,
+                top: 6,
+                child: Image.asset(
+                  'assets/images/doctor.png',
+                  fit: BoxFit.contain,
+                ),
+              ),
+
+              // Banner Content
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20.0,
+                  vertical: 16.0,
+                ),
+                child: FractionallySizedBox(
+                  widthFactor: 0.58,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      // Badge / Header tag
+                      Text(
+                        badgeText,
+                        style: const TextStyle(
+                          color: Colors.white70,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+
+                      // Main bold call-to-action title
+                      Text(
+                        title,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 20,
+                          fontWeight: FontWeight.w800,
+                          height: 1.25,
+                          letterSpacing: -0.3,
+                        ),
+                      ),
+
+                      // Bottom statistic tag
+                      Text(
+                        patientCountText,
+                        style: TextStyle(
+                          color: Colors.white.withOpacity(0.85),
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          height: 1.2,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }

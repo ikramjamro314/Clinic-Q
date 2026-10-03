@@ -39,17 +39,17 @@ final clinicDetailsProvider = FutureProvider.family<ClinicEntity?, String>((
   clinicId,
 ) async {
   final repository = ref.watch(clinicRepositoryProvider);
-  return await repository.getClinicById(clinicId);
+  return await repository.getClinicById(clinicId, forceRefresh: true);
 });
 
 final selectDoctorViewModelProvider =
-    NotifierProvider.family<SelectDoctorNotifier, SelectDoctorState, String>(
+    NotifierProvider.autoDispose.family<SelectDoctorNotifier, SelectDoctorState, String>(
       SelectDoctorNotifier.new,
     );
 
 final clinicDoctorsProvider = FutureProvider.family<List<DoctorEntity>, String>(
   (ref, clinicId) async {
     final repository = ref.watch(doctorRepositoryProvider);
-    return await repository.getDoctorsByClinic(clinicId);
+    return await repository.getDoctorsByClinic(clinicId, forceRefresh: true);
   },
 );

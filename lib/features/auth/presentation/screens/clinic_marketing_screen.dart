@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -144,14 +145,24 @@ class _ClinicMarketingScreenState extends State<ClinicMarketingScreen>
 
   Future<void> _launchDashboard() async {
     await HapticFeedback.mediumImpact();
-    final url = Uri.parse('https://dashboard.clinicq.com');
-    if (await canLaunchUrl(url)) {
-      await launchUrl(url, mode: LaunchMode.externalApplication);
-    } else {
-      if (mounted) {
+    final webUrl =
+        dotenv.env['WEB_URL']?.trim() ?? 'https://smart-q-dun.vercel.app/';
+    final url = Uri.parse(webUrl);
+    try {
+      final launched = await launchUrl(
+        url,
+        mode: LaunchMode.externalApplication,
+      );
+      if (!launched && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Could not launch ClinicQ Dashboard')),
         );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Could not open link: $e')));
       }
     }
   }
@@ -459,15 +470,6 @@ class _ClinicMarketingScreenState extends State<ClinicMarketingScreen>
                   SizedBox(height: 6 * scale),
 
                   // dashboard link under CTA
-                  Text(
-                    'dashboard.clinicq.com',
-                    textAlign: TextAlign.center,
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: ClinicQColors.textTertiary,
-                      fontWeight: FontWeight.w500,
-                      fontSize: (12 * scale).clamp(10.0, 14.0),
-                    ),
-                  ),
                   SizedBox(height: 12 * scale),
 
                   // Continue as Patient secondary button

@@ -5,9 +5,14 @@ class SelectDoctorState {
 
   const SelectDoctorState({this.selectedDoctorId});
 
-  SelectDoctorState copyWith({String? selectedDoctorId}) {
+  SelectDoctorState copyWith({
+    String? selectedDoctorId,
+    bool clearDoctor = false,
+  }) {
     return SelectDoctorState(
-      selectedDoctorId: selectedDoctorId ?? this.selectedDoctorId,
+      selectedDoctorId: clearDoctor
+          ? null
+          : (selectedDoctorId ?? this.selectedDoctorId),
     );
   }
 }
@@ -22,10 +27,15 @@ class SelectDoctorNotifier extends Notifier<SelectDoctorState> {
   }
 
   void selectDoctor(String doctorId) {
-    state = state.copyWith(selectedDoctorId: doctorId);
+    if (state.selectedDoctorId == doctorId) {
+      // Toggle off if already selected
+      state = state.copyWith(clearDoctor: true);
+    } else {
+      state = state.copyWith(selectedDoctorId: doctorId);
+    }
   }
 
   void clearSelection() {
-    state = const SelectDoctorState(selectedDoctorId: null);
+    state = const SelectDoctorState();
   }
 }

@@ -11,7 +11,7 @@ class ClinicNotifier extends Notifier<ClinicState> {
     return const ClinicState(isLoading: true);
   }
 
-  Future<void> _loadInitialData() async {
+  Future<void> _loadInitialData({bool forceRefresh = false}) async {
     state = state.copyWith(isLoading: true).clearError();
 
     try {
@@ -21,6 +21,7 @@ class ClinicNotifier extends Notifier<ClinicState> {
         city: state.city,
         specialty: state.specialty,
         search: state.searchQuery,
+        forceRefresh: forceRefresh,
       );
 
       final hasCache = all.isNotEmpty && all.any((e) => e.isFromCache);
@@ -41,7 +42,8 @@ class ClinicNotifier extends Notifier<ClinicState> {
   }
 
   Future<void> searchClinics(String query) async {
-    state = state.copyWith(searchQuery: query, isLoading: true).clearError();
+    final trimmed = query.trim();
+    state = state.copyWith(searchQuery: trimmed, isLoading: true).clearError();
 
     try {
       final repository = ref.read(clinicRepositoryProvider);
@@ -49,7 +51,7 @@ class ClinicNotifier extends Notifier<ClinicState> {
       final all = await repository.getAllClinics(
         city: state.city,
         specialty: state.specialty,
-        search: query,
+        search: trimmed.isEmpty ? null : trimmed,
       );
 
       final hasCache = all.isNotEmpty && all.any((e) => e.isFromCache);
@@ -66,6 +68,12 @@ class ClinicNotifier extends Notifier<ClinicState> {
         errorMessage: appEx.message,
         isFromCache: false,
       );
+    }
+  }
+
+  void resetSearch() {
+    if (state.searchQuery != null && state.searchQuery!.isNotEmpty) {
+      searchClinics('');
     }
   }
 
@@ -103,6 +111,6 @@ class ClinicNotifier extends Notifier<ClinicState> {
   }
 
   Future<void> refresh() async {
-    await _loadInitialData();
+    await _loadInitialData(forceRefresh: true);
   }
 }

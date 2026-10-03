@@ -26,24 +26,20 @@ class TrackingApiService {
         final rawData = ApiResponse.process(response.data);
         if (rawData is Map<String, dynamic>) {
           // Parse the live queue response
-          final currentToken = rawData['currentTokenNumber'] as int? ??
-              rawData['currentlyServingTokenNumber'] as int? ??
-              rawData['currentlyServing'] as int? ??
-              rawData['currentToken'] as int? ??
-              rawData['current_token'] as int? ?? 0;
-              
+          final currentToken = rawData['currentTokenNumber'] as int? ?? 0;
+
           // Find our token details from the token list
-          final tokenListRaw = rawData['fullTokenList'] ?? rawData['tokens'] ?? rawData['tokenList'];
+          final tokenListRaw = rawData['tokens'] ?? rawData['fullTokenList'];
           Map<String, dynamic>? myTokenJson;
-          
+
           final List<Token> fullTokens = [];
           if (tokenListRaw is List) {
             for (final item in tokenListRaw) {
               if (item is Map<String, dynamic>) {
                 final tModel = TokenModel.fromJson(item);
                 fullTokens.add(tModel);
-                
-                final id = item['tokenId'] as String? ?? item['id'] as String? ?? item['token_id'] as String?;
+
+                final id = item['id'] as String? ?? item['tokenId'] as String?;
                 if (id == tokenId) {
                   myTokenJson = item;
                 }
@@ -57,30 +53,21 @@ class TrackingApiService {
           String statusVal = 'waiting';
 
           if (myTokenJson != null) {
-            yourToken = myTokenJson['yourTokenNumber'] as int? ??
-                myTokenJson['yourToken'] as int? ??
-                myTokenJson['tokenNumber'] as int? ??
-                myTokenJson['token_number'] as int? ?? 0;
-                
-            patientsAhead = myTokenJson['patientsAheadCount'] as int? ??
-                myTokenJson['patientsAhead'] as int? ??
-                myTokenJson['patients_ahead'] as int? ?? 0;
-                
-            estWait = myTokenJson['estimatedWaitMinutes'] as int? ??
-                myTokenJson['estimatedWaitTime'] as int? ??
-                myTokenJson['estimated_wait'] as int? ??
-                myTokenJson['estimatedWait'] as int? ?? 0;
-                
+            yourToken = myTokenJson['tokenNumber'] as int? ??
+                myTokenJson['yourTokenNumber'] as int? ?? 0;
+            patientsAhead = myTokenJson['patientsAheadCount'] as int? ?? 0;
+            estWait = myTokenJson['estimatedWaitMinutes'] as int? ?? 0;
             statusVal = myTokenJson['status'] as String? ?? 'waiting';
           } else {
-            // Check top level
-            yourToken = rawData['yourTokenNumber'] as int? ?? rawData['yourToken'] as int? ?? 0;
-            patientsAhead = rawData['patientsAheadCount'] as int? ?? rawData['patientsAhead'] as int? ?? 0;
-            estWait = rawData['estimatedWaitMinutes'] as int? ?? rawData['estimatedWaitTime'] as int? ?? 0;
+            yourToken = rawData['yourTokenNumber'] as int? ?? 0;
+            patientsAhead = rawData['patientsAheadCount'] as int? ?? 0;
+            estWait = rawData['estimatedWaitMinutes'] as int? ?? 0;
             statusVal = rawData['status'] as String? ?? 'waiting';
           }
 
-          // Compute fallbacks if necessary
+          final maxLimit = rawData['maxTokensPerDay'] as int?;
+
+          // Compute estimated waiting/ahead if not supplied by backend
           if (patientsAhead == 0 && yourToken > currentToken && currentToken > 0) {
             patientsAhead = yourToken - currentToken - 1;
             if (patientsAhead < 0) patientsAhead = 0;
@@ -98,6 +85,7 @@ class TrackingApiService {
             status: statusVal,
             lastSyncedAt: DateTime.now(),
             fullTokenList: fullTokens,
+            maxTokens: maxLimit,
           );
         }
       } catch (e) {

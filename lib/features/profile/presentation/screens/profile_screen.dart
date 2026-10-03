@@ -358,8 +358,7 @@ class ProfileScreen extends ConsumerWidget {
           } else if (index == 2) {
             context.go(AppRoutes.home);
           } else if (index == 3) {
-            final activeToken = ref.read(activeTokenLookupProvider).value;
-            context.go('/tracking/${activeToken?.id ?? "none"}');
+            context.go('/tracking/active');
           }
         },
       ),

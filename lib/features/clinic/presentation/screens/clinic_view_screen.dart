@@ -414,7 +414,9 @@ class ClinicViewScreen extends ConsumerWidget {
                                 return ClinicDoctorCard(
                                   doctor: doctor,
                                   onBookTap: () {
-                                    // TODO: proceed to booking
+                                    context.push(
+                                      '/booking/confirm?doctorId=${doctor.id}&clinicId=${clinic.id}',
+                                    );
                                   },
                                 );
                               },

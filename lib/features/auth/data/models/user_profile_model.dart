@@ -17,7 +17,7 @@ class UserProfileModel extends UserProfile {
 
   factory UserProfileModel.fromJson(Map<String, dynamic> json) {
     return UserProfileModel(
-      id: json['id'] as String? ?? json['_id'] as String? ?? '',
+      id: json['id'] as String? ?? '',
       name: json['name'] as String? ?? '',
       role: json['role'] as String? ?? '',
       email: json['email'] as String? ?? '',
@@ -27,9 +27,7 @@ class UserProfileModel extends UserProfile {
       createdAt: json['createdAt'] as String?,
       updatedAt: json['updatedAt'] as String?,
       gender: json['gender'] as String?,
-      dateOfBirth: json['dateOfBirth'] as String? ??
-          json['dob'] as String? ??
-          json['date_of_birth'] as String?,
+      dateOfBirth: json['dob'] as String?,
     );
   }
 

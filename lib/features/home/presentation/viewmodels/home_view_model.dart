@@ -24,7 +24,7 @@ class HomeNotifier extends Notifier<HomeState> {
     return HomeState(isLoading: true, userName: initialName);
   }
 
-  Future<void> _loadHomeData() async {
+  Future<void> _loadHomeData({bool forceRefresh = false}) async {
     state = state.copyWith(isLoading: true, errorMessage: null);
 
     try {
@@ -58,8 +58,8 @@ class HomeNotifier extends Notifier<HomeState> {
       final docRepo = ref.read(doctorRepositoryProvider);
       final clinicRepo = ref.read(clinicRepositoryProvider);
 
-      final docEntities = await docRepo.getInterestedDoctors();
-      final clinicEntities = await clinicRepo.getAllClinics();
+      final docEntities = await docRepo.getInterestedDoctors(forceRefresh: forceRefresh);
+      final clinicEntities = await clinicRepo.getAllClinics(forceRefresh: forceRefresh);
 
       if (docEntities.any((d) => d.isFromCache) || clinicEntities.any((c) => c.isFromCache)) {
         isFromCache = true;
@@ -150,7 +150,7 @@ class HomeNotifier extends Notifier<HomeState> {
     state = state.copyWith(selectedNavIndex: index);
   }
 
-  void refresh() {
-    _loadHomeData();
+  Future<void> refresh() async {
+    await _loadHomeData(forceRefresh: true);
   }
 }

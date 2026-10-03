@@ -27,6 +27,14 @@ class _ClinicScreenState extends ConsumerState<ClinicScreen> {
   final TextEditingController _searchController = TextEditingController();
 
   @override
+  void initState() {
+    super.initState();
+    _searchController.addListener(() {
+      if (mounted) setState(() {});
+    });
+  }
+
+  @override
   void dispose() {
     _searchController.dispose();
     super.dispose();
@@ -194,13 +202,16 @@ class _ClinicScreenState extends ConsumerState<ClinicScreen> {
       bottomNavigationBar: HomeBottomNavBar(
         currentIndex: 0, // 0 is Clinics tab
         onTap: (index) {
+          if (index != 0) {
+            _searchController.clear();
+            clinicNotifier.resetSearch();
+          }
           if (index == 1) {
             context.go(AppRoutes.doctors);
           } else if (index == 2) {
             context.go(AppRoutes.home);
           } else if (index == 3) {
-            final activeToken = ref.read(activeTokenLookupProvider).value;
-            context.go('/tracking/${activeToken?.id ?? "none"}');
+            context.go('/tracking/active');
           } else if (index == 4) {
             context.go(AppRoutes.profile);
           }

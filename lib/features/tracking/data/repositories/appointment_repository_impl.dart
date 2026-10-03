@@ -73,9 +73,15 @@ class AppointmentRepositoryImpl implements AppointmentRepository {
           .toList();
       await _localDataSource.upsertTokens(companions);
 
-      final filteredTokens = userId != null
-          ? networkTokens.where((t) => t.userId == userId).toList()
+      List<Token> filteredTokens = (userId != null && userId.isNotEmpty)
+          ? networkTokens
+              .where((t) => t.userId.isEmpty || t.userId == userId)
+              .toList()
           : networkTokens;
+
+      if (filteredTokens.isEmpty && networkTokens.isNotEmpty) {
+        filteredTokens = networkTokens;
+      }
 
       debugPrint(
         '[Appointment] Fetched ${filteredTokens.length} tokens from NETWORK',
@@ -91,20 +97,23 @@ class AppointmentRepositoryImpl implements AppointmentRepository {
         var cachedEntities = cachedRows.map((r) => _fromDriftData(r)).toList();
 
         // Apply client-side filters if passed
-        if (doctorId != null) {
+        if (doctorId != null && doctorId.isNotEmpty) {
           cachedEntities = cachedEntities
               .where((t) => t.doctorId == doctorId)
               .toList();
         }
-        if (clinicId != null) {
+        if (clinicId != null && clinicId.isNotEmpty) {
           cachedEntities = cachedEntities
               .where((t) => t.clinicId == clinicId)
               .toList();
         }
-        if (userId != null) {
-          cachedEntities = cachedEntities
-              .where((t) => t.userId == userId)
+        if (userId != null && userId.isNotEmpty) {
+          final userMatched = cachedEntities
+              .where((t) => t.userId == userId || t.userId.isEmpty)
               .toList();
+          if (userMatched.isNotEmpty) {
+            cachedEntities = userMatched;
+          }
         }
 
         final flagged = cachedEntities

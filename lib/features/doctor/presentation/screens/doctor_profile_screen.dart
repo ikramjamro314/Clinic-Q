@@ -96,7 +96,7 @@ class DoctorProfileScreen extends ConsumerWidget {
                 child: ClinicQErrorWidget(
                   message: profileState.errorMessage ?? 'Doctor not found.',
                   onRetry: () =>
-                      ref.invalidate(doctorProfileViewModelProvider(doctorId)),
+                      ref.read(doctorProfileViewModelProvider(doctorId).notifier).refresh(),
                 ),
               )
             : Column(

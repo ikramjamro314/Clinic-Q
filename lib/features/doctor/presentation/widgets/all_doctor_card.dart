@@ -84,15 +84,19 @@ class AllDoctorCard extends StatelessWidget {
                   const SizedBox(height: 6),
 
                   // Clinic Name
-                  Text(
-                    doctor.clinicName,
-                    style: const TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: ClinicQColors.textLink,
+                  if (doctor.clinicName.isNotEmpty) ...[
+                    Text(
+                      doctor.clinicName,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: ClinicQColors.textLink,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 6),
+                    const SizedBox(height: 6),
+                  ],
 
                   // Bottom Row: Rating, Price, Duration
                   Row(

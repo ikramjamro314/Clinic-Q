@@ -1,13 +1,56 @@
 import 'package:flutter/material.dart';
 import '../../../../app/theme/clinic_q_colors.dart';
 
-class DoctorBanner extends StatelessWidget {
-  const DoctorBanner({super.key, this.onTap});
+import '../../domain/entities/doctor_entity.dart';
 
+class DoctorBanner extends StatelessWidget {
+  final DoctorEntity? doctor;
+  final DateTime? appointmentDate;
   final VoidCallback? onTap;
+
+  const DoctorBanner({
+    super.key,
+    this.doctor,
+    this.appointmentDate,
+    this.onTap,
+  });
+
+  String _formatDate(DateTime? date) {
+    if (date == null) return 'Today';
+    final weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    final months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
+    final wDay = weekdays[date.weekday - 1];
+    final mName = months[date.month - 1];
+    return '$wDay, ${date.day} $mName ${date.year}';
+  }
+
+  String _formatTime(DoctorEntity? doc) {
+    if (doc == null) return '09:00 - 14:00';
+    final start = doc.startTime?.isNotEmpty == true ? doc.startTime! : '09:00';
+    final end = doc.endTime?.isNotEmpty == true ? doc.endTime! : '14:00';
+    return '$start - $end';
+  }
 
   @override
   Widget build(BuildContext context) {
+    final docName = doctor?.name.isNotEmpty == true ? doctor!.name : 'Next Available Doctor';
+    final docSpecialty = doctor?.specialty.isNotEmpty == true ? doctor!.specialty : 'General Physician';
+    final formattedDate = _formatDate(appointmentDate);
+    final formattedTime = _formatTime(doctor);
+
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -44,7 +87,7 @@ class DoctorBanner extends StatelessWidget {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: const [
                         Text(
-                          'Upcoming Appointments',
+                          'Upcoming Schedule',
                           style: TextStyle(
                             color: Colors.white,
                             fontSize: 16,
@@ -65,16 +108,16 @@ class DoctorBanner extends StatelessWidget {
                         Expanded(
                           child: _buildInfoCard(
                             icon: Icons.calendar_today_outlined,
-                            title: 'Mon, 11 June 2024',
-                            subtitle: 'Appointments Date',
+                            title: formattedDate,
+                            subtitle: 'Available Date',
                           ),
                         ),
                         const SizedBox(width: 12),
                         Expanded(
                           child: _buildInfoCard(
                             icon: Icons.access_time_rounded,
-                            title: '08:00 - 12:00',
-                            subtitle: 'Appointments Time',
+                            title: formattedTime,
+                            subtitle: 'Available Time',
                           ),
                         ),
                       ],
@@ -100,33 +143,48 @@ class DoctorBanner extends StatelessWidget {
                               color: ClinicQColors.secondaryBackground,
                             ),
                             child: ClipOval(
-                              child: const Icon(
-                                Icons.person,
-                                color: ClinicQColors.primaryTeal,
-                              ),
+                              child: (doctor?.photoUrl != null &&
+                                      doctor!.photoUrl!.isNotEmpty &&
+                                      !doctor!.photoUrl!.contains('example.com'))
+                                  ? Image.network(
+                                      doctor!.photoUrl!,
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (_, __, ___) => const Icon(
+                                        Icons.person,
+                                        color: ClinicQColors.primaryTeal,
+                                      ),
+                                    )
+                                  : const Icon(
+                                      Icons.person,
+                                      color: ClinicQColors.primaryTeal,
+                                    ),
                             ),
                           ),
                           const SizedBox(width: 12),
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
-                              children: const [
+                              children: [
                                 Text(
-                                  'Dr. Strange Walker',
-                                  style: TextStyle(
+                                  docName,
+                                  style: const TextStyle(
                                     fontSize: 14,
                                     fontWeight: FontWeight.w700,
                                     color: ClinicQColors.textPrimary,
                                   ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
                                 ),
-                                SizedBox(height: 2),
+                                const SizedBox(height: 2),
                                 Text(
-                                  'Internist Specialist Doctor',
-                                  style: TextStyle(
+                                  docSpecialty,
+                                  style: const TextStyle(
                                     fontSize: 12,
                                     fontWeight: FontWeight.w500,
                                     color: ClinicQColors.textSecondary,
                                   ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
                                 ),
                               ],
                             ),
@@ -140,9 +198,9 @@ class DoctorBanner extends StatelessWidget {
                               ),
                             ),
                             child: const Icon(
-                              Icons.chat_bubble_outline_rounded,
+                              Icons.arrow_forward_rounded,
                               size: 18,
-                              color: ClinicQColors.textPrimary,
+                              color: ClinicQColors.primaryTeal,
                             ),
                           ),
                         ],

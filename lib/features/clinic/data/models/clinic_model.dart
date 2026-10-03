@@ -46,38 +46,41 @@ class ClinicModel extends ClinicEntity {
   }
 
   factory ClinicModel.fromJson(Map<String, dynamic> json) {
-    final rawSpecialties = _parseList(json['specialties']);
-    final rawWorkingDays = _parseList(json['workingDays']);
-    final rawFacilities = _parseList(json['facilities']);
+    final rawSpecialties = json['specialties'] is List
+        ? List<String>.from(json['specialties'] as List)
+        : const <String>[];
+    final rawWorkingDays = json['workingDays'] is List
+        ? List<String>.from(json['workingDays'] as List)
+        : const <String>[];
+    final rawFacilities = json['facilities'] is List
+        ? List<String>.from(json['facilities'] as List)
+        : const <String>[];
 
     final open = json['openTime'] as String? ?? '';
     final close = json['closeTime'] as String? ?? '';
-
     final computedOpeningHours = (open.isNotEmpty && close.isNotEmpty)
         ? '${rawWorkingDays.isNotEmpty ? rawWorkingDays.join(', ') : 'Daily'}: $open - $close'
-        : (json['opening_hours'] as String? ?? 'Mon-Fri: 9:00 AM - 8:00 PM');
+        : '09:00 - 21:00';
 
-    final computedSpecialtyTag = rawSpecialties.isNotEmpty
-        ? rawSpecialties.first
-        : (json['specialty_tag'] as String? ?? 'General');
+    final clinicTitle = json['clinicName'] as String? ?? '';
 
     return ClinicModel(
-      id: json['id'] as String? ?? json['_id'] as String? ?? '',
-      name: json['clinicName'] as String? ?? json['name'] as String? ?? '',
-      imageUrl: json['imageUrl'] as String? ?? json['image_url'] as String?,
-      specialtyTag: computedSpecialtyTag,
-      rating: (json['rating'] as num?)?.toDouble() ?? 4.5,
-      reviewCount: (json['review_count'] as num?)?.toInt() ?? 120,
+      id: json['id'] as String? ?? '',
+      name: clinicTitle,
+      imageUrl: null,
+      specialtyTag: rawSpecialties.isNotEmpty ? rawSpecialties.first : 'General',
+      rating: 4.8,
+      reviewCount: 120,
       openingHours: computedOpeningHours,
       address: json['address'] as String? ?? '',
-      doctorCount: (json['doctor_count'] as num?)?.toInt() ?? 3,
+      doctorCount: 3,
       phone: json['phone'] as String? ?? '',
-      patientCount: json['patient_count'] as String? ?? '100+',
-      specialistCount: json['specialist_count'] as String? ?? '5+',
-      yearsExperience: json['years_experience'] as String? ?? '5Yrs+',
-      isOpen: json['is_open'] as bool? ?? true,
+      patientCount: '100+',
+      specialistCount: '${rawSpecialties.length}+',
+      yearsExperience: '5Yrs+',
+      isOpen: true,
       ownerId: json['ownerId'] as String?,
-      clinicName: json['clinicName'] as String?,
+      clinicName: clinicTitle,
       tagline: json['tagline'] as String?,
       description: json['description'] as String?,
       city: json['city'] as String?,

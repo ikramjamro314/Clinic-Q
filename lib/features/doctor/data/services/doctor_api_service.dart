@@ -129,13 +129,14 @@ class DoctorApiService {
     return null;
   }
 
-  /// Fetches featured or interested doctors (returning doctors filtered by high ratings)
+  /// Fetches featured or top doctors sorted by rating in descending order
   Future<List<DoctorModel>> getInterestedDoctors() async {
     final doctors = await getAllDoctors();
-    // Return doctors with rating >= 4.8 or the first 3
-    final filtered = doctors.where((doc) => doc.rating >= 4.8).toList();
-    if (filtered.isNotEmpty) return filtered;
-    return doctors.take(3).toList();
+    final sorted = List<DoctorModel>.from(doctors)
+      ..sort((a, b) => b.rating.compareTo(a.rating));
+    final highRated = sorted.where((doc) => doc.rating >= 4.5).toList();
+    if (highRated.isNotEmpty) return highRated.take(10).toList();
+    return sorted.take(5).toList();
   }
 
   /// Fetches doctors for a specific clinic

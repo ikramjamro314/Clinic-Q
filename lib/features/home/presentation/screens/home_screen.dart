@@ -177,6 +177,7 @@ class HomeScreen extends ConsumerWidget {
 
                       // Quick action layout (Clinics/Doctors navigation tiles)
                       HomeQuickActions(
+                        onBookApptTap: () => context.push('/tracking/active'),
                         onFindClinicTap: () => context.push(AppRoutes.clinics),
                         onMyRecordsTap: () =>
                             context.push(AppRoutes.appointmentHistory),
@@ -257,8 +258,7 @@ class HomeScreen extends ConsumerWidget {
           } else if (index == 2) {
             context.go(AppRoutes.home);
           } else if (index == 3) {
-            final activeToken = ref.read(activeTokenLookupProvider).value;
-            context.go('/tracking/${activeToken?.id ?? "none"}');
+            context.go('/tracking/active');
           } else if (index == 4) {
             context.go(AppRoutes.profile);
           } else {
