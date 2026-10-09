@@ -1,3 +1,4 @@
+import 'package:clinic_q/features/doctor/domain/entities/available_date_entity.dart';
 import 'package:clinic_q/features/doctor/domain/entities/doctor_entity.dart';
 import 'package:clinic_q/features/doctor/domain/entities/specialty_entity.dart';
 
@@ -20,4 +21,7 @@ abstract class DoctorRepository {
 
   /// Fetches doctors for a specific clinic.
   Future<List<DoctorEntity>> getDoctorsByClinic(String clinicId, {bool forceRefresh = false});
+
+  /// Fetches upcoming available booking dates for a doctor.
+  Future<List<AvailableDateEntity>> getAvailableDates(String doctorId);
 }

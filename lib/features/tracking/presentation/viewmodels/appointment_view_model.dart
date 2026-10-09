@@ -39,6 +39,8 @@ class AppointmentNotifier extends Notifier<AppointmentState> {
     required String doctorId,
     required String clinicId,
     required String userId,
+    String? appointmentDate,
+    bool? isFuture,
     String? notes,
   }) async {
     state = state.copyWith(isLoading: true, errorMessage: null);
@@ -47,6 +49,8 @@ class AppointmentNotifier extends Notifier<AppointmentState> {
             doctorId: doctorId,
             clinicId: clinicId,
             userId: userId,
+            appointmentDate: appointmentDate,
+            isFuture: isFuture,
             notes: notes,
           );
       state = state.copyWith(

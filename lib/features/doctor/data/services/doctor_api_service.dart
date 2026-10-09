@@ -3,6 +3,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import '../../domain/entities/specialty_entity.dart';
 import '../models/doctor_model.dart';
+import '../models/available_date_model.dart';
 
 class DoctorApiService {
   final Dio _dio;
@@ -142,5 +143,17 @@ class DoctorApiService {
   /// Fetches doctors for a specific clinic
   Future<List<DoctorModel>> getDoctorsByClinic(String clinicId) async {
     return await getAllDoctors(clinicId: clinicId);
+  }
+
+  /// Fetches the next available working dates for a doctor (looping from tomorrow, up to 3 working days)
+  Future<List<AvailableDateModel>> getAvailableDates(String doctorId) async {
+    final response = await _dio.get('/api/patient/doctors/$doctorId/available-dates');
+    final rawData = ApiResponse.process(response.data);
+    if (rawData is List) {
+      return rawData
+          .map((json) => AvailableDateModel.fromJson(json as Map<String, dynamic>))
+          .toList();
+    }
+    return [];
   }
 }

@@ -3,18 +3,27 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../app/theme/clinic_q_colors.dart';
 import '../../../../core/widgets/buttons/clinicq_button.dart';
+import '../../../../core/widgets/buttons/clinicq_outlined_button.dart';
 import '../../../doctor/domain/entities/doctor_entity.dart';
 import '../../domain/entities/token.dart';
 import '../../domain/entities/queue_preview.dart';
+import '../utils/booking_date_utils.dart';
+import '../widgets/booking_app_bar.dart';
+import '../widgets/booking_ticket_card.dart';
 
 class BookingSuccessParams {
   final DoctorEntity doctor;
   final QueuePreview preview;
   final Token token;
+  final DateTime? selectedDate;
+  final bool isToday;
+
   const BookingSuccessParams({
     required this.doctor,
     required this.preview,
     required this.token,
+    this.selectedDate,
+    this.isToday = true,
   });
 }
 
@@ -22,260 +31,158 @@ class BookingSuccessScreen extends StatelessWidget {
   final DoctorEntity doctor;
   final QueuePreview preview;
   final Token token;
+  final DateTime? selectedDate;
+  final bool isToday;
 
   const BookingSuccessScreen({
     super.key,
     required this.doctor,
     required this.preview,
     required this.token,
+    this.selectedDate,
+    this.isToday = true,
   });
 
   @override
   Widget build(BuildContext context) {
-    String waitTimeStr;
-    if (preview.estimatedWaitMinutes < 60) {
-      waitTimeStr = '${preview.estimatedWaitMinutes} min';
+    final effectiveDate = selectedDate ?? DateTime.now();
+    final dateFormatted = isToday
+        ? BookingDateUtils.formatFullDate(effectiveDate, includeTodayPrefix: true)
+        : BookingDateUtils.formatFullDate(effectiveDate);
+
+    final tokenNumber = token.tokenNumber ?? preview.nextTokenNumber;
+
+    // Enrich doctor with token response fields if available
+    final displayDoctor = doctor.copyWith(
+      name: (token.doctorName != null && token.doctorName!.isNotEmpty)
+          ? token.doctorName
+          : doctor.name,
+      clinicName: (token.clinicName != null && token.clinicName!.isNotEmpty)
+          ? token.clinicName
+          : doctor.clinicName,
+      specialty: (token.specialization != null && token.specialization!.isNotEmpty)
+          ? token.specialization
+          : doctor.specialty,
+    );
+
+    // Queue status explanation text
+    String statusExplanation;
+    if (!isToday) {
+      statusExplanation =
+          'Your token is reserved for $dateFormatted. The live queue and wait time metrics will automatically activate on the day of your appointment. We will remind you beforehand.';
+    } else if (token.estimatedWaitMinutes != null && token.estimatedWaitMinutes! > 0) {
+      final ahead = token.tokensAhead ?? preview.patientsAheadCount;
+      statusExplanation =
+          'Your estimated wait is ~${token.estimatedWaitMinutes} min ($ahead patients ahead). You can track your live queue position anytime.';
     } else {
-      final hrs = preview.estimatedWaitMinutes ~/ 60;
-      final mins = preview.estimatedWaitMinutes % 60;
-      waitTimeStr = '~${hrs} hr ${mins} min';
+      statusExplanation =
+          'The queue has not started yet, so there is no wait time to show. On the day, you will see your live position here. We will notify you when consultations begin.';
     }
 
     return Scaffold(
       backgroundColor: ClinicQColors.appBackground,
+      appBar: BookingAppBar(
+        title: 'Book a token',
+        stepText: '3 of 3',
+        onBack: () => context.go('/home'),
+      ),
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Spacer(),
-              // Big Success Checkmark
-              Container(
-                width: 96,
-                height: 96,
-                decoration: BoxDecoration(
-                  color: ClinicQColors.primaryTeal.withOpacity(0.12),
-                  shape: BoxShape.circle,
-                ),
-                alignment: Alignment.center,
-                child: Container(
-                  width: 72,
-                  height: 72,
-                  decoration: const BoxDecoration(
-                    color: ClinicQColors.primaryTeal,
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.check_rounded,
-                    color: Colors.white,
-                    size: 40,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 28),
-              const Text(
-                'Token Booked!',
-                style: TextStyle(
-                  color: ClinicQColors.textPrimary,
-                  fontSize: 26,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'You are in the queue for ${doctor.name}',
-                style: const TextStyle(
-                  color: ClinicQColors.textSecondary,
-                  fontSize: 14,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 36),
-              // Compact Summary Card
-              Container(
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(24),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.02),
-                      blurRadius: 10,
-                      spreadRadius: 1,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                clipBehavior: Clip.antiAlias,
+        child: Column(
+          children: [
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 8.0),
                 child: Column(
                   children: [
+                    const SizedBox(height: 8),
+
+                    // Clean Checkmark Badge consistent with App Theme
                     Container(
-                      padding: const EdgeInsets.all(20),
+                      width: 52,
+                      height: 52,
                       decoration: const BoxDecoration(
-                        gradient: ClinicQColors.gradientPrimary,
-                      ),
-                      width: double.infinity,
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text(
-                                'YOUR TOKEN',
-                                style: TextStyle(
-                                  color: Colors.white70,
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                token.tokenNumber != null
-                                    ? '#${token.tokenNumber}'
-                                    : '#--',
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 32,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ],
-                          ),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.end,
-                            children: [
-                              Text(
-                                doctor.name,
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              Text(
-                                doctor.clinicName,
-                                style: const TextStyle(
-                                  color: Colors.white70,
-                                  fontSize: 12,
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                  vertical: 4,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withOpacity(0.2),
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: const Text(
-                                  'Queue Live',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 9,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                            ],
+                        color: ClinicQColors.primaryTeal,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Color(0x3314B8A6),
+                            blurRadius: 10,
+                            offset: Offset(0, 4),
                           ),
                         ],
                       ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(
-                        vertical: 20.0,
-                        horizontal: 16,
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceAround,
-                        children: [
-                          _buildStatItem(
-                            value: preview.patientsAheadCount.toString(),
-                            label: 'Ahead',
-                          ),
-                          const SizedBox(
-                            height: 32,
-                            child: VerticalDivider(
-                              color: ClinicQColors.dividerMedium,
-                            ),
-                          ),
-                          _buildStatItem(
-                            value: waitTimeStr,
-                            label: 'Est. Wait',
-                          ),
-                          const SizedBox(
-                            height: 32,
-                            child: VerticalDivider(
-                              color: ClinicQColors.dividerMedium,
-                            ),
-                          ),
-                          _buildStatItem(
-                            value: doctor.startTime ?? '9:00 AM',
-                            label: 'Opens At',
-                          ),
-                        ],
+                      alignment: Alignment.center,
+                      child: const Icon(
+                        Icons.check_rounded,
+                        color: Colors.white,
+                        size: 30,
                       ),
                     ),
+                    const SizedBox(height: 14),
+
+                    // Title
+                    const Text(
+                      'You are booked',
+                      style: TextStyle(
+                        color: ClinicQColors.textPrimary,
+                        fontSize: 24,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+
+                    // Booking Ticket Card
+                    BookingTicketCard(
+                      tokenNumber: tokenNumber,
+                      dateText: dateFormatted,
+                      doctor: displayDoctor,
+                    ),
+                    const SizedBox(height: 20),
+
+                    // Queue status explanation text
+                    Text(
+                      statusExplanation,
+                      style: const TextStyle(
+                        color: ClinicQColors.textSecondary,
+                        fontSize: 13,
+                        height: 1.45,
+                      ),
+                      textAlign: TextAlign.start,
+                    ),
+                    const SizedBox(height: 20),
                   ],
                 ),
               ),
-              const Spacer(),
-              // Actions
-              ClinicQButton(
-                label: 'Track My Token',
-                icon: Icons.track_changes_rounded,
-                gradient: ClinicQColors.gradientPrimary,
-                onPressed: () {
-                  // Direct to tracking tab/screen
-                  context.go('/tracking/${token.id}');
-                },
-              ),
-              const SizedBox(height: 16),
-              GestureDetector(
-                onTap: () {
-                  context.go('/home');
-                },
-                child: const Text(
-                  'Back to Appointments',
-                  style: TextStyle(
-                    color: ClinicQColors.textSecondary,
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                    decoration: TextDecoration.underline,
+            ),
+
+            // Action Buttons
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  ClinicQButton(
+                    label: 'Track my token',
+                    gradient: ClinicQColors.gradientPrimary,
+                    onPressed: () {
+                      context.go('/tracking/${token.id}');
+                    },
                   ),
-                ),
+                  const SizedBox(height: 12),
+                  ClinicQOutlinedButton(
+                    label: 'Back to home',
+                    borderColor: ClinicQColors.primaryTeal,
+                    textColor: ClinicQColors.primaryTeal,
+                    onPressed: () {
+                      context.go('/home');
+                    },
+                  ),
+                ],
               ),
-              const SizedBox(height: 24),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
-    );
-  }
-
-  Widget _buildStatItem({required String value, required String label}) {
-    return Column(
-      children: [
-        Text(
-          value,
-          style: const TextStyle(
-            color: ClinicQColors.primaryBlue,
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          label,
-          style: const TextStyle(
-            color: ClinicQColors.textTertiary,
-            fontSize: 11,
-          ),
-        ),
-      ],
     );
   }
 }

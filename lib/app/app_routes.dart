@@ -25,6 +25,8 @@ class AppRoutes {
   static const String appointmentHistory = '/appointments/history';
   static const String bookingTokenInfo = '/booking/token-info';
   static const String bookingConfirm = '/booking/confirm';
+  static const String bookingPickDay = '/booking/pick-day';
+  static const String bookingCheckToken = '/booking/check-token';
   static const String bookingSuccess = '/booking/success';
   static const String tracking = '/tracking/:id';
   static const String trackingCompleted = '/tracking/:id/completed';

@@ -3,6 +3,7 @@ import 'package:clinic_q/features/doctor/presentation/viewmodels/doctor_profile_
 import 'package:clinic_q/features/doctor/presentation/viewmodels/filter_state.dart';
 import 'package:clinic_q/features/doctor/presentation/viewmodels/filter_view_model.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../domain/entities/available_date_entity.dart';
 
 import '../data/repositories/doctor_repository_impl.dart';
 import '../domain/repositories/doctor_repository.dart';
@@ -47,3 +48,8 @@ final filterViewModelProvider =
     NotifierProvider.autoDispose<FilterViewModel, FilterState>(
   FilterViewModel.new,
 );
+
+final doctorAvailableDatesProvider =
+    FutureProvider.family<List<AvailableDateEntity>, String>((ref, doctorId) async {
+  return ref.watch(doctorRepositoryProvider).getAvailableDates(doctorId);
+});

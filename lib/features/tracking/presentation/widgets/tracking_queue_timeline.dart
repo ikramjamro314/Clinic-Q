@@ -146,7 +146,11 @@ class TrackingQueueTimeline extends StatelessWidget {
                     ? 'Please proceed to the doctor\'s room now!'
                     : (isPassed
                           ? 'Completed'
-                          : 'Estimated wait: ~${snapshot.estimatedWaitMinutes} mins'),
+                          : (snapshot.estimatedWaitMinutes != null
+                              ? 'Estimated wait: ~${snapshot.estimatedWaitMinutes} mins'
+                              : (snapshot.status == 'paused' || snapshot.queueStatus == 'PAUSED'
+                                  ? 'Queue currently paused'
+                                  : 'Wait time calculating...'))),
                 showLine: false,
               ),
             ],

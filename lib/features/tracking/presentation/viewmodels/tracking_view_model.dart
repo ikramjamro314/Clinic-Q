@@ -62,6 +62,7 @@ class TrackingNotifier extends Notifier<TrackingState> {
 
     try {
       await ref.read(appointmentRepositoryProvider).cancelToken(tokenId);
+      await ref.read(appointmentViewModelProvider.notifier).cancelToken(tokenId);
 
       if (state.snapshot != null) {
         state = state.copyWith(

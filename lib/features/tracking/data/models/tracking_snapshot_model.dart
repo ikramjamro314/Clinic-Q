@@ -8,11 +8,15 @@ class TrackingSnapshotModel extends TrackingSnapshot {
     required super.currentTokenNumber,
     required super.yourTokenNumber,
     required super.patientsAheadCount,
-    required super.estimatedWaitMinutes,
+    super.estimatedWaitMinutes,
     required super.status,
     required super.lastSyncedAt,
     super.fullTokenList = const [],
     super.maxTokens,
+    super.estimatedTime,
+    super.queueStatus,
+    super.activeTokenId,
+    super.appointmentDate,
     super.isFromCache = false,
     super.isStale = false,
   });
@@ -20,12 +24,43 @@ class TrackingSnapshotModel extends TrackingSnapshot {
   factory TrackingSnapshotModel.fromJson(Map<String, dynamic> json, String defaultTokenId) {
     final id = json['tokenId'] as String? ?? json['id'] as String? ?? defaultTokenId;
 
-    final currentToken = json['currentTokenNumber'] as int? ?? 0;
-    final yourToken = json['yourTokenNumber'] as int? ?? json['tokenNumber'] as int? ?? 0;
-    final patientsAhead = json['patientsAheadCount'] as int? ?? 0;
-    final estWait = json['estimatedWaitMinutes'] as int? ?? 0;
-    final statusVal = json['status'] as String? ?? 'waiting';
-    final maxLimit = json['maxTokensPerDay'] as int?;
+    final currentToken = json['currentTokenNumber'] as int? ??
+        json['currentlyServing'] as int? ??
+        0;
+    final yourToken = json['yourTokenNumber'] as int? ??
+        json['tokenNumber'] as int? ??
+        0;
+    final patientsAhead = json['patientsAheadCount'] as int? ??
+        json['tokensAhead'] as int? ??
+        0;
+
+    final queueStatus = json['queueStatus'] as String? ??
+        json['queue_status'] as String?;
+    final isPaused = (queueStatus != null && queueStatus.toUpperCase() == 'PAUSED') ||
+        json['status'] == 'paused' ||
+        json['isPaused'] == true;
+
+    // Paused queues & future appointments return null estimatedWaitMinutes
+    final estWait = isPaused
+        ? null
+        : (json['estimatedWaitMinutes'] as int? ??
+            json['estimated_wait_minutes'] as int? ??
+            json['estimatedWait'] as int?);
+
+    final estTime = json['estimatedTime'] as String? ??
+        json['estimated_time'] as String?;
+
+    final activeTokenIdVal = json['activeTokenId'] as String? ??
+        json['active_token_id'] as String? ??
+        json['myTokenId'] as String?;
+
+    final statusVal = json['status'] as String? ?? (isPaused ? 'paused' : 'waiting');
+    final maxLimit = json['maxTokensPerDay'] as int? ??
+        json['dailyTokenCap'] as int?;
+
+    final appointmentDateVal = json['appointmentDate'] as String? ??
+        json['appointment_date'] as String? ??
+        json['date'] as String?;
 
     final tokenListRaw = json['tokens'] ?? json['fullTokenList'];
     final List<Token> fullTokens = [];
@@ -47,6 +82,10 @@ class TrackingSnapshotModel extends TrackingSnapshot {
       lastSyncedAt: DateTime.now(),
       fullTokenList: fullTokens,
       maxTokens: maxLimit,
+      estimatedTime: estTime,
+      queueStatus: queueStatus,
+      activeTokenId: activeTokenIdVal,
+      appointmentDate: appointmentDateVal,
     );
   }
 
@@ -59,6 +98,10 @@ class TrackingSnapshotModel extends TrackingSnapshot {
       'estimatedWaitMinutes': estimatedWaitMinutes,
       'status': status,
       'lastSyncedAt': lastSyncedAt.toIso8601String(),
+      'estimatedTime': estimatedTime,
+      'queueStatus': queueStatus,
+      'activeTokenId': activeTokenId,
+      'appointmentDate': appointmentDate,
     };
   }
 }

@@ -8,7 +8,7 @@ class SkeletonBox extends StatelessWidget {
 
   const SkeletonBox({
     super.key,
-    required this.width,
+    this.width = double.infinity,
     required this.height,
     this.borderRadius = 8.0,
   });

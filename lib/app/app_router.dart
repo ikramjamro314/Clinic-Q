@@ -1,8 +1,11 @@
 import 'package:clinic_q/features/ratings/presentation/screens/all_reviews_screen.dart';
 import 'package:clinic_q/features/tracking/presentation/screens/tracking_screen.dart';
-import 'package:clinic_q/features/tracking/presentation/screens/token_info_screen.dart';
+import 'package:clinic_q/features/tracking/presentation/providers.dart';
 import 'package:clinic_q/features/tracking/presentation/screens/confirm_booking_screen.dart';
+import 'package:clinic_q/features/tracking/presentation/screens/pick_day_screen.dart';
+import 'package:clinic_q/features/tracking/presentation/screens/check_token_screen.dart';
 import 'package:clinic_q/features/tracking/presentation/screens/booking_success_screen.dart';
+import 'package:clinic_q/features/doctor/domain/entities/doctor_entity.dart';
 import 'package:clinic_q/features/tracking/presentation/screens/appointment_history_screen.dart';
 import 'package:clinic_q/features/tracking/presentation/screens/tracking_completed_screen.dart';
 import 'package:flutter/material.dart';
@@ -312,14 +315,61 @@ final routerProvider = Provider<GoRouter>((ref) {
         pageBuilder: (context, state) {
           final doctorId = state.uri.queryParameters['doctorId'] ?? '';
           final clinicId = state.uri.queryParameters['clinicId'] ?? '';
-          final extra = state.extra as TokenInfoData?;
+          final extra = state.extra;
+
+          TokenInfoData? tokenInfoData;
+          DoctorEntity? doctorEntity;
+
+          if (extra is TokenInfoData) {
+            tokenInfoData = extra;
+          } else if (extra is DoctorEntity) {
+            doctorEntity = extra;
+          }
+
           return buildPageWithTransition(
             state: state,
             child: ConfirmBookingScreen(
               doctorId: doctorId,
               clinicId: clinicId,
-              initialData: extra,
+              initialData: tokenInfoData,
+              initialDoctor: doctorEntity,
             ),
+            transitionType: AppTransitionType.slideLeft,
+          );
+        },
+      ),
+      GoRoute(
+        path: AppRoutes.bookingPickDay,
+        pageBuilder: (context, state) {
+          final doctorId = state.uri.queryParameters['doctorId'] ?? '';
+          final clinicId = state.uri.queryParameters['clinicId'] ?? '';
+          final extra = state.extra;
+          final doctorEntity = extra is DoctorEntity ? extra : null;
+
+          return buildPageWithTransition(
+            state: state,
+            child: PickDayScreen(
+              doctorId: doctorId,
+              clinicId: clinicId,
+              initialDoctor: doctorEntity,
+            ),
+            transitionType: AppTransitionType.slideLeft,
+          );
+        },
+      ),
+      GoRoute(
+        path: AppRoutes.bookingCheckToken,
+        pageBuilder: (context, state) {
+          final extra = state.extra as CheckTokenParams?;
+          if (extra == null) {
+            return buildPageWithTransition(
+              state: state,
+              child: const Scaffold(body: Center(child: Text('Invalid State'))),
+            );
+          }
+          return buildPageWithTransition(
+            state: state,
+            child: CheckTokenScreen(params: extra),
             transitionType: AppTransitionType.slideLeft,
           );
         },
@@ -340,6 +390,8 @@ final routerProvider = Provider<GoRouter>((ref) {
               doctor: extra.doctor,
               preview: extra.preview,
               token: extra.token,
+              selectedDate: extra.selectedDate,
+              isToday: extra.isToday,
             ),
             transitionType: AppTransitionType.slideLeft,
           );

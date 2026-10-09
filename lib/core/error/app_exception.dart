@@ -27,6 +27,13 @@ class CacheException extends AppException {
   const CacheException([super.message = 'Couldn\'t load saved data.']);
 }
 
+class QueueClosedException extends AppException {
+  const QueueClosedException([
+    super.message =
+        "The queue for today is closed because the doctor's shift has ended. Please pick an upcoming day to book your token.",
+  ]);
+}
+
 class UnknownException extends AppException {
   const UnknownException([super.message = 'Something went wrong. Please try again.']);
 }

@@ -22,15 +22,24 @@ AppException mapErrorToException(Object error) {
           final data = response.data;
 
           String? apiErrorMessage;
+          String? apiErrorCode;
           if (data is Map<String, dynamic>) {
-            apiErrorMessage = data['error'] as String?;
+            apiErrorMessage = data['error'] as String? ?? data['message'] as String?;
+            apiErrorCode = data['errorCode'] as String? ?? data['code'] as String?;
           } else if (data is String) {
             try {
               final parsed = jsonDecode(data);
               if (parsed is Map<String, dynamic>) {
-                apiErrorMessage = parsed['error'] as String?;
+                apiErrorMessage = parsed['error'] as String? ?? parsed['message'] as String?;
+                apiErrorCode = parsed['errorCode'] as String? ?? parsed['code'] as String?;
               }
             } catch (_) {}
+          }
+
+          if (apiErrorCode == 'QUEUE_CLOSED' ||
+              apiErrorMessage == 'QUEUE_CLOSED' ||
+              (apiErrorMessage != null && apiErrorMessage.contains('QUEUE_CLOSED'))) {
+            return const QueueClosedException();
           }
 
           if (statusCode == 404) {

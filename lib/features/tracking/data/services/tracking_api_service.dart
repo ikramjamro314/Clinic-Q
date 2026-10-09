@@ -47,33 +47,51 @@ class TrackingApiService {
             }
           }
 
+          final queueStatus = rawData['queueStatus'] as String? ?? rawData['queue_status'] as String?;
+          final isPaused = (queueStatus != null && queueStatus.toUpperCase() == 'PAUSED') ||
+              rawData['status'] == 'paused' ||
+              rawData['isPaused'] == true;
+
           int yourToken = 0;
           int patientsAhead = 0;
-          int estWait = 0;
-          String statusVal = 'waiting';
+          int? estWait;
+          String statusVal = isPaused ? 'paused' : 'waiting';
 
           if (myTokenJson != null) {
             yourToken = myTokenJson['tokenNumber'] as int? ??
                 myTokenJson['yourTokenNumber'] as int? ?? 0;
-            patientsAhead = myTokenJson['patientsAheadCount'] as int? ?? 0;
-            estWait = myTokenJson['estimatedWaitMinutes'] as int? ?? 0;
-            statusVal = myTokenJson['status'] as String? ?? 'waiting';
+            patientsAhead = myTokenJson['patientsAheadCount'] as int? ??
+                myTokenJson['tokensAhead'] as int? ?? 0;
+            estWait = isPaused
+                ? null
+                : (myTokenJson['estimatedWaitMinutes'] as int? ??
+                    myTokenJson['estimated_wait_minutes'] as int?);
+            statusVal = myTokenJson['status'] as String? ?? (isPaused ? 'paused' : 'waiting');
           } else {
-            yourToken = rawData['yourTokenNumber'] as int? ?? 0;
-            patientsAhead = rawData['patientsAheadCount'] as int? ?? 0;
-            estWait = rawData['estimatedWaitMinutes'] as int? ?? 0;
-            statusVal = rawData['status'] as String? ?? 'waiting';
+            yourToken = rawData['yourTokenNumber'] as int? ??
+                rawData['tokenNumber'] as int? ?? 0;
+            patientsAhead = rawData['patientsAheadCount'] as int? ??
+                rawData['tokensAhead'] as int? ?? 0;
+            estWait = isPaused
+                ? null
+                : (rawData['estimatedWaitMinutes'] as int? ??
+                    rawData['estimated_wait_minutes'] as int?);
+            statusVal = rawData['status'] as String? ?? (isPaused ? 'paused' : 'waiting');
           }
 
-          final maxLimit = rawData['maxTokensPerDay'] as int?;
+          final maxLimit = rawData['maxTokensPerDay'] as int? ?? rawData['dailyTokenCap'] as int?;
+          final activeTokenIdVal = rawData['activeTokenId'] as String? ?? rawData['active_token_id'] as String?;
+          final estTime = rawData['estimatedTime'] as String? ?? rawData['estimated_time'] as String?;
 
-          // Compute estimated waiting/ahead if not supplied by backend
-          if (patientsAhead == 0 && yourToken > currentToken && currentToken > 0) {
-            patientsAhead = yourToken - currentToken - 1;
-            if (patientsAhead < 0) patientsAhead = 0;
-          }
-          if (estWait == 0 && patientsAhead > 0) {
-            estWait = patientsAhead * 10; // Default 10 mins per patient ahead
+          // Compute estimated waiting/ahead if not supplied by backend and queue is NOT paused
+          if (!isPaused) {
+            if (patientsAhead == 0 && yourToken > currentToken && currentToken > 0) {
+              patientsAhead = yourToken - currentToken - 1;
+              if (patientsAhead < 0) patientsAhead = 0;
+            }
+            if (estWait == null && patientsAhead > 0) {
+              estWait = patientsAhead * 10; // Default 10 mins per patient ahead
+            }
           }
 
           return TrackingSnapshotModel(
@@ -86,6 +104,9 @@ class TrackingApiService {
             lastSyncedAt: DateTime.now(),
             fullTokenList: fullTokens,
             maxTokens: maxLimit,
+            queueStatus: queueStatus,
+            estimatedTime: estTime,
+            activeTokenId: activeTokenIdVal,
           );
         }
       } catch (e) {

@@ -41,14 +41,13 @@ class _TrackingQueueLineupState extends State<TrackingQueueLineup> {
 
     final current = widget.snapshot.currentTokenNumber;
     final mine = widget.snapshot.yourTokenNumber;
-    // Focus target is the current token or your token (whichever is earlier)
     final targetToken = current > 0 ? current : mine;
     if (targetToken > 1) {
-      final itemWidth = 56.0 + 12.0; // width + right margin
+      final itemWidth = 54.0 + 10.0;
       final targetOffset = max(0.0, (targetToken - 2) * itemWidth);
       _scrollController.animateTo(
         targetOffset,
-        duration: const Duration(milliseconds: 400),
+        duration: const Duration(milliseconds: 350),
         curve: Curves.easeOutCubic,
       );
     }
@@ -65,31 +64,20 @@ class _TrackingQueueLineupState extends State<TrackingQueueLineup> {
     final current = widget.snapshot.currentTokenNumber;
     final mine = widget.snapshot.yourTokenNumber;
 
-    // Determine max token limit from API response or Doctor Profile
-    final maxLimit = widget.snapshot.maxTokens ?? widget.doctor?.maxTokensPerDay ?? 0;
-
     List<int> numbers = [];
-    if (maxLimit > 0) {
-      // Generate full sequential lineup up to the doctor's max token capacity
-      final totalCapacity = max(maxLimit, max(current, mine));
-      for (int i = 1; i <= totalCapacity; i++) {
-        numbers.add(i);
-      }
-    } else if (widget.snapshot.fullTokenList.isNotEmpty) {
-      // Fallback: Use tokens provided in the live queue list
+
+    if (widget.snapshot.fullTokenList.isNotEmpty) {
       numbers = widget.snapshot.fullTokenList
           .map((t) => t.tokenNumber ?? 0)
           .where((n) => n > 0)
           .toSet()
           .toList();
       numbers.sort();
-    } else {
-      // General dynamic fallback
-      final start = (current > 1) ? current - 1 : 1;
-      final end = max(mine + 3, current + 5);
-      for (int i = start; i <= end; i++) {
-        numbers.add(i);
-      }
+    }
+
+    if (numbers.isEmpty) {
+      final maxVal = max(5, max(current, mine));
+      numbers = List.generate(maxVal, (i) => i + 1);
     }
 
     return Column(
@@ -98,32 +86,16 @@ class _TrackingQueueLineupState extends State<TrackingQueueLineup> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Live Queue Lineup',
-                  style: TextStyle(
-                    color: ClinicQColors.textPrimary,
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                if (maxLimit > 0) ...[
-                  const SizedBox(height: 2),
-                  Text(
-                    'Daily capacity: $maxLimit tokens',
-                    style: const TextStyle(
-                      color: ClinicQColors.textTertiary,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
-              ],
+            const Text(
+              'Live Queue Lineup',
+              style: TextStyle(
+                color: ClinicQColors.textPrimary,
+                fontSize: 15,
+                fontWeight: FontWeight.w700,
+              ),
             ),
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
               decoration: BoxDecoration(
                 color: ClinicQColors.availableBadgeBackground,
                 borderRadius: BorderRadius.circular(10),
@@ -145,13 +117,11 @@ class _TrackingQueueLineupState extends State<TrackingQueueLineup> {
                   ),
                   const SizedBox(width: 6),
                   Text(
-                    maxLimit > 0
-                        ? 'Serving #${current.toString().padLeft(2, '0')} / $maxLimit'
-                        : 'Serving #${current.toString().padLeft(2, '0')}',
+                    'Serving ${current.toString().padLeft(2, '0')}',
                     style: const TextStyle(
                       color: ClinicQColors.availableBadgeText,
                       fontSize: 12,
-                      fontWeight: FontWeight.bold,
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
                 ],
@@ -159,9 +129,9 @@ class _TrackingQueueLineupState extends State<TrackingQueueLineup> {
             ),
           ],
         ),
-        const SizedBox(height: 14),
+        const SizedBox(height: 12),
         SizedBox(
-          height: 64,
+          height: 56,
           child: ListView.builder(
             controller: _scrollController,
             scrollDirection: Axis.horizontal,
@@ -171,7 +141,7 @@ class _TrackingQueueLineupState extends State<TrackingQueueLineup> {
               final tokenNum = numbers[index];
               final isCurrent = tokenNum == current;
               final isMine = tokenNum == mine;
-              final isPassed = tokenNum < current;
+              final isPassed = current > 0 && tokenNum < current;
 
               Color circleBg = Colors.white;
               Color borderCol = ClinicQColors.cardBorder;
@@ -179,8 +149,8 @@ class _TrackingQueueLineupState extends State<TrackingQueueLineup> {
               double borderWidth = 1.0;
 
               if (isMine) {
-                circleBg = ClinicQColors.primaryBlue;
-                borderCol = ClinicQColors.primaryTeal;
+                circleBg = ClinicQColors.primaryTeal;
+                borderCol = ClinicQColors.darkTeal;
                 textCol = Colors.white;
                 borderWidth = 2.0;
               } else if (isCurrent) {
@@ -194,9 +164,9 @@ class _TrackingQueueLineupState extends State<TrackingQueueLineup> {
               }
 
               return Container(
-                margin: const EdgeInsets.only(right: 12),
-                width: 56,
-                height: 56,
+                margin: const EdgeInsets.only(right: 10),
+                width: 54,
+                height: 54,
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
                   color: circleBg,
@@ -207,16 +177,16 @@ class _TrackingQueueLineupState extends State<TrackingQueueLineup> {
                   boxShadow: isMine
                       ? [
                           BoxShadow(
-                            color: ClinicQColors.primaryBlue.withValues(alpha: 0.35),
-                            blurRadius: 10,
-                            offset: const Offset(0, 4),
+                            color: ClinicQColors.primaryTeal.withOpacity(0.3),
+                            blurRadius: 8,
+                            offset: const Offset(0, 3),
                           ),
                         ]
                       : isCurrent
                           ? [
                               BoxShadow(
-                                color: ClinicQColors.tokenActive.withValues(alpha: 0.2),
-                                blurRadius: 8,
+                                color: ClinicQColors.tokenActive.withOpacity(0.2),
+                                blurRadius: 6,
                                 offset: const Offset(0, 2),
                               ),
                             ]
@@ -226,12 +196,12 @@ class _TrackingQueueLineupState extends State<TrackingQueueLineup> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
-                      '#${tokenNum.toString().padLeft(2, '0')}',
+                      tokenNum.toString().padLeft(2, '0'),
                       style: TextStyle(
                         color: textCol,
-                        fontSize: 14,
+                        fontSize: 13.5,
                         fontWeight: (isMine || isCurrent)
-                            ? FontWeight.bold
+                            ? FontWeight.w800
                             : FontWeight.w600,
                       ),
                     ),

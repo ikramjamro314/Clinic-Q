@@ -246,7 +246,7 @@ class TrackingRepositoryImpl implements TrackingRepository {
       currentTokenNumber: r.currentTokenNumber ?? 0,
       yourTokenNumber: r.yourTokenNumber ?? 0,
       patientsAheadCount: r.patientsAheadCount ?? 0,
-      estimatedWaitMinutes: r.estimatedWaitMinutes ?? 0,
+      estimatedWaitMinutes: r.estimatedWaitMinutes,
       status: r.status ?? 'waiting',
       lastSyncedAt: r.lastSyncedAt,
       isFromCache: r.isFromCache,

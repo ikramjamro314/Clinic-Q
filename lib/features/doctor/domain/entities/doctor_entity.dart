@@ -15,6 +15,7 @@ class DoctorEntity {
   final bool isAvailable;
   final String? about; // maps to qualification or fallback
   final String? location;
+  final String? clinicAddress;
 
   // API fields
   final String? clinicId;
@@ -43,6 +44,7 @@ class DoctorEntity {
     this.isAvailable = true,
     this.about,
     this.location,
+    this.clinicAddress,
     this.clinicId,
     this.qualification,
     this.experience,
@@ -68,6 +70,7 @@ class DoctorEntity {
     bool? isAvailable,
     String? about,
     String? location,
+    String? clinicAddress,
     String? clinicId,
     String? qualification,
     int? experience,
@@ -92,6 +95,7 @@ class DoctorEntity {
       isAvailable: isAvailable ?? this.isAvailable,
       about: about ?? this.about,
       location: location ?? this.location,
+      clinicAddress: clinicAddress ?? this.clinicAddress,
       clinicId: clinicId ?? this.clinicId,
       qualification: qualification ?? this.qualification,
       experience: experience ?? this.experience,

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../app/theme/clinic_q_colors.dart';
+import '../../../../core/utils/time_utils.dart';
 
 import '../../domain/entities/doctor_entity.dart';
 
@@ -38,10 +39,10 @@ class DoctorBanner extends StatelessWidget {
   }
 
   String _formatTime(DoctorEntity? doc) {
-    if (doc == null) return '09:00 - 14:00';
-    final start = doc.startTime?.isNotEmpty == true ? doc.startTime! : '09:00';
-    final end = doc.endTime?.isNotEmpty == true ? doc.endTime! : '14:00';
-    return '$start - $end';
+    return TimeUtils.formatTimeRange(
+      doc?.startTime ?? '09:00',
+      doc?.endTime ?? '14:00',
+    );
   }
 
   @override

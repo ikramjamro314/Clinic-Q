@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../app/app_routes.dart';
 import '../../../../app/theme/clinic_q_colors.dart';
+import '../../../../core/utils/time_utils.dart';
 import '../../../../core/widgets/feedback/clinicq_error_widget.dart';
 import '../../../../core/widgets/feedback/clinicq_loader.dart';
 import '../../../doctor/domain/entities/doctor_entity.dart';
@@ -50,10 +51,8 @@ class _AppointmentHistoryScreenState
         'Nov',
         'Dec',
       ];
-      final padMins = dt.minute.toString().padLeft(2, '0');
-      final period = dt.hour >= 12 ? 'PM' : 'AM';
-      final hour = dt.hour % 12 == 0 ? 12 : dt.hour % 12;
-      return '${dt.day} ${months[dt.month - 1]}, ${dt.year} at $hour:$padMins $period';
+      final timeFormatted = TimeUtils.formatDateTimeTo12Hour(dt);
+      return '${dt.day} ${months[dt.month - 1]}, ${dt.year} at $timeFormatted';
     } catch (e) {
       return 'Today';
     }

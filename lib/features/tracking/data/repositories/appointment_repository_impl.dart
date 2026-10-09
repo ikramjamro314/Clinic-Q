@@ -26,16 +26,20 @@ class AppointmentRepositoryImpl implements AppointmentRepository {
     required String doctorId,
     required String clinicId,
     required String userId,
+    String? appointmentDate,
+    bool? isFuture,
     String? notes,
   }) async {
     debugPrint(
-      '[Appointment] Booking token — doctorId=$doctorId, clinicId=$clinicId',
+      '[Appointment] Booking token — doctorId=$doctorId, clinicId=$clinicId, appointmentDate=$appointmentDate, isFuture=$isFuture',
     );
     try {
       final networkToken = await _apiService.createToken(
         doctorId: doctorId,
         clinicId: clinicId,
         userId: userId,
+        appointmentDate: appointmentDate,
+        isFuture: isFuture,
         notes: notes,
       );
       debugPrint(
@@ -75,13 +79,9 @@ class AppointmentRepositoryImpl implements AppointmentRepository {
 
       List<Token> filteredTokens = (userId != null && userId.isNotEmpty)
           ? networkTokens
-              .where((t) => t.userId.isEmpty || t.userId == userId)
+              .where((t) => t.userId == userId)
               .toList()
           : networkTokens;
-
-      if (filteredTokens.isEmpty && networkTokens.isNotEmpty) {
-        filteredTokens = networkTokens;
-      }
 
       debugPrint(
         '[Appointment] Fetched ${filteredTokens.length} tokens from NETWORK',
@@ -108,12 +108,9 @@ class AppointmentRepositoryImpl implements AppointmentRepository {
               .toList();
         }
         if (userId != null && userId.isNotEmpty) {
-          final userMatched = cachedEntities
-              .where((t) => t.userId == userId || t.userId.isEmpty)
+          cachedEntities = cachedEntities
+              .where((t) => t.userId == userId)
               .toList();
-          if (userMatched.isNotEmpty) {
-            cachedEntities = userMatched;
-          }
         }
 
         final flagged = cachedEntities
@@ -160,6 +157,52 @@ class AppointmentRepositoryImpl implements AppointmentRepository {
     required String doctorId,
     required String clinicId,
   }) async {
+    final doctor = await _doctorRepository.getDoctorById(doctorId);
+    final avgDuration = doctor?.durationMinutes ?? 10;
+
+    // 1. First fetch real-time live queue snapshot from /api/patient/queue/live/{doctorId}
+    try {
+      final liveData = await _apiService.getLiveQueue(doctorId);
+      if (liveData != null) {
+        final currentTokenNumber = liveData['currentTokenNumber'] as int? ?? 0;
+        final totalWaiting = liveData['totalWaiting'] as int? ?? 0;
+        final totalTokensToday = liveData['totalTokensToday'] as int? ?? 0;
+        final tokensRaw = liveData['tokens'];
+
+        int nextTokenNumber = totalTokensToday + 1;
+        if (tokensRaw is List && tokensRaw.isNotEmpty) {
+          int maxNum = 0;
+          for (final t in tokensRaw) {
+            if (t is Map<String, dynamic>) {
+              final num = t['tokenNumber'] as int? ?? 0;
+              if (num > maxNum) maxNum = num;
+            }
+          }
+          if (maxNum >= nextTokenNumber) {
+            nextTokenNumber = maxNum + 1;
+          }
+        }
+
+        final estimatedWaitMinutes = totalWaiting * avgDuration;
+
+        debugPrint(
+          '[Appointment] Real-time Live Queue preview — currentToken=#$currentTokenNumber, next=#$nextTokenNumber, waiting=$totalWaiting, estWait=${estimatedWaitMinutes}min',
+        );
+
+        return QueuePreview(
+          nextTokenNumber: nextTokenNumber,
+          nowServingNumber: currentTokenNumber,
+          patientsAheadCount: totalWaiting,
+          estimatedWaitMinutes: estimatedWaitMinutes,
+        );
+      }
+    } catch (e) {
+      debugPrint(
+        '[Appointment] Live queue endpoint failed, falling back to tokens list calculation: $e',
+      );
+    }
+
+    // 2. Fallback: Calculate from tokens list
     final tokens = await getTokens(doctorId: doctorId, clinicId: clinicId);
     final todayStr = DateTime.now().toIso8601String().substring(0, 10);
 
@@ -172,7 +215,7 @@ class AppointmentRepositoryImpl implements AppointmentRepository {
       return t.status != 'completed' && t.status != 'cancelled';
     }).length;
 
-    int nowServingNumber = 1;
+    int nowServingNumber = 0;
     final activeTokens = todayTokens
         .where(
           (t) =>
@@ -185,7 +228,7 @@ class AppointmentRepositoryImpl implements AppointmentRepository {
       activeTokens.sort(
         (a, b) => (a.tokenNumber ?? 0).compareTo(b.tokenNumber ?? 0),
       );
-      nowServingNumber = activeTokens.first.tokenNumber ?? 1;
+      nowServingNumber = activeTokens.first.tokenNumber ?? 0;
     } else {
       final completedTokens = todayTokens
           .where((t) => t.status == 'completed')
@@ -194,18 +237,7 @@ class AppointmentRepositoryImpl implements AppointmentRepository {
         completedTokens.sort(
           (a, b) => (a.tokenNumber ?? 0).compareTo(b.tokenNumber ?? 0),
         );
-        nowServingNumber = completedTokens.last.tokenNumber ?? 1;
-      } else {
-        final waitingTokens = todayTokens
-            .where((t) => t.status == 'waiting' || t.status == 'upcoming')
-            .toList();
-        if (waitingTokens.isNotEmpty) {
-          waitingTokens.sort(
-            (a, b) => (a.tokenNumber ?? 0).compareTo(b.tokenNumber ?? 0),
-          );
-          nowServingNumber = (waitingTokens.first.tokenNumber ?? 2) - 1;
-          if (nowServingNumber < 1) nowServingNumber = 1;
-        }
+        nowServingNumber = completedTokens.last.tokenNumber ?? 0;
       }
     }
 
@@ -217,12 +249,10 @@ class AppointmentRepositoryImpl implements AppointmentRepository {
       nextTokenNumber = maxToken + 1;
     }
 
-    final doctor = await _doctorRepository.getDoctorById(doctorId);
-    final avgDuration = doctor?.durationMinutes ?? 10;
     final estimatedWaitMinutes = patientsAheadCount * avgDuration;
 
     debugPrint(
-      '[Appointment] Queue preview — ahead=$patientsAheadCount, nowServing=#$nowServingNumber, next=#$nextTokenNumber, estWait=${estimatedWaitMinutes}min',
+      '[Appointment] Fallback Queue preview — ahead=$patientsAheadCount, nowServing=#$nowServingNumber, next=#$nextTokenNumber, estWait=${estimatedWaitMinutes}min',
     );
 
     return QueuePreview(

@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:drift/drift.dart' as d;
+import 'package:clinic_q/features/doctor/domain/entities/available_date_entity.dart';
 import 'package:clinic_q/features/doctor/domain/entities/specialty_entity.dart';
 import 'package:clinic_q/features/clinic/data/local/clinic_local_data_source.dart';
 
@@ -342,6 +343,23 @@ class DoctorRepositoryImpl implements DoctorRepository {
           return filtered;
         }
       }
+      throw appEx;
+    }
+  }
+
+  @override
+  Future<List<AvailableDateEntity>> getAvailableDates(String doctorId) async {
+    try {
+      final dates = await _apiService.getAvailableDates(doctorId);
+      debugPrint(
+        '[DoctorRepository] Fetched ${dates.length} available dates for doctorId=$doctorId from NETWORK',
+      );
+      return dates;
+    } catch (error) {
+      final appEx = mapErrorToException(error);
+      debugPrint(
+        '[DoctorRepository] Failed to fetch available dates for doctorId=$doctorId: $appEx',
+      );
       throw appEx;
     }
   }

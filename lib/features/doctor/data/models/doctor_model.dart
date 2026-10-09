@@ -15,6 +15,7 @@ class DoctorModel extends DoctorEntity {
     super.isAvailable = true,
     super.about,
     super.location,
+    super.clinicAddress,
     super.clinicId,
     super.qualification,
     super.experience,
@@ -38,24 +39,39 @@ class DoctorModel extends DoctorEntity {
     final rawWorkingDays = json['workingDays'] is List
         ? List<String>.from(json['workingDays'] as List)
         : const <String>[];
-    final clinicIdVal = json['clinicId'] as String?;
+    final clinicIdVal = json['clinicId'] as String? ?? json['clinic_id'] as String?;
+    final rawClinicName = json['clinicName'] as String? ?? json['clinic_name'] as String?;
+    final rawClinicAddress = json['clinicAddress'] as String? ??
+        json['clinic_address'] as String? ??
+        json['location'] as String?;
 
     return DoctorModel(
-      id: json['id'] as String? ?? '',
+      id: json['id'] as String? ?? json['_id'] as String? ?? '',
       name: json['name'] as String? ?? '',
-      specialty: json['specialization'] as String? ?? 'General',
-      clinicName: clinicIdVal != null
-          ? 'Clinic ${clinicIdVal.substring(0, 4)}'
-          : 'Clinic',
-      photoUrl: json['image'] as String?,
+      specialty: json['specialization'] as String? ??
+          json['specialty'] as String? ??
+          'General',
+      clinicName: (rawClinicName != null && rawClinicName.isNotEmpty)
+          ? rawClinicName
+          : (clinicIdVal != null
+              ? 'Clinic ${clinicIdVal.length > 4 ? clinicIdVal.substring(0, 4) : clinicIdVal}'
+              : 'Clinic'),
+      photoUrl: json['image'] as String? ?? json['photoUrl'] as String?,
       rating: (json['rating'] as num?)?.toDouble() ?? 4.9,
-      reviewCount: 80,
-      price: (json['consultationFee'] as num?)?.toDouble() ?? 2500.0,
-      durationMinutes: (json['avgServiceDuration'] as num?)?.toInt() ?? 20,
-      isInterested: false,
-      isAvailable: true,
-      about: json['qualification'] as String? ?? 'Specialist Physician',
-      location: 'Pakistan',
+      reviewCount: (json['reviewCount'] as num?)?.toInt() ?? 80,
+      price: (json['consultationFee'] as num?)?.toDouble() ??
+          (json['price'] as num?)?.toDouble() ??
+          2500.0,
+      durationMinutes: (json['avgServiceDuration'] as num?)?.toInt() ??
+          (json['durationMinutes'] as num?)?.toInt() ??
+          20,
+      isInterested: json['isInterested'] as bool? ?? false,
+      isAvailable: json['isAvailable'] as bool? ?? true,
+      about: json['about'] as String? ??
+          json['qualification'] as String? ??
+          'Specialist Physician',
+      location: rawClinicAddress ?? 'Pakistan',
+      clinicAddress: rawClinicAddress,
       clinicId: clinicIdVal,
       qualification: json['qualification'] as String?,
       experience: (json['experience'] as num?)?.toInt(),
@@ -81,6 +97,7 @@ class DoctorModel extends DoctorEntity {
       'is_available': isAvailable,
       'about': about,
       'location': location,
+      'clinicAddress': clinicAddress,
       'clinicId': clinicId,
       'qualification': qualification,
       'experience': experience,
@@ -106,6 +123,7 @@ class DoctorModel extends DoctorEntity {
       isAvailable: entity.isAvailable,
       about: entity.about,
       location: entity.location,
+      clinicAddress: entity.clinicAddress,
       clinicId: entity.clinicId,
       qualification: entity.qualification,
       experience: entity.experience,

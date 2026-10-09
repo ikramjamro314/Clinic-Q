@@ -6,6 +6,8 @@ abstract class AppointmentRepository {
     required String doctorId,
     required String clinicId,
     required String userId,
+    String? appointmentDate,
+    bool? isFuture,
     String? notes,
   });
 

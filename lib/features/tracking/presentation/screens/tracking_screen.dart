@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'package:clinic_q/features/auth/presentation/auth_providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -10,15 +9,23 @@ import '../../../../core/widgets/feedback/clinicq_loader.dart';
 import '../../../../core/widgets/feedback/clinicq_error_widget.dart';
 import '../../../../core/widgets/feedback/offline_banner.dart';
 import '../../../../core/widgets/buttons/clinicq_button.dart';
+import '../../../../core/widgets/buttons/clinicq_outlined_button.dart';
+import '../../../auth/presentation/auth_providers.dart';
 import '../../../home/presentation/widgets/home_bottom_nav_bar.dart';
 import '../../../doctor/presentation/doctor_providers.dart';
 import '../../../doctor/domain/entities/doctor_entity.dart';
 import '../../domain/entities/token.dart';
 import '../providers.dart';
-import '../widgets/tracking_header_card.dart';
-import '../widgets/tracking_stats_grid.dart';
+import '../utils/booking_date_utils.dart';
+import '../widgets/booking_app_bar.dart';
+import '../widgets/today_queue_card.dart';
+import '../widgets/tracking_alert_card.dart';
 import '../widgets/tracking_queue_lineup.dart';
 import '../widgets/tracking_queue_timeline.dart';
+import '../../../../core/utils/time_utils.dart';
+import '../widgets/metric_stat_box.dart';
+import '../widgets/queue_status_badge.dart';
+import '../widgets/upcoming_token_card.dart';
 
 /// Resolves the Doctor associated with a given Token ID
 final trackingDoctorProvider = FutureProvider.family<DoctorEntity?, String>((
@@ -30,7 +37,9 @@ final trackingDoctorProvider = FutureProvider.family<DoctorEntity?, String>((
     final inMemTokens = ref.read(appointmentViewModelProvider).tokens;
     final inMemToken = inMemTokens.where((t) => t.id == tokenId).firstOrNull;
     if (inMemToken != null && inMemToken.doctorId.isNotEmpty) {
-      return ref.read(doctorRepositoryProvider).getDoctorById(inMemToken.doctorId);
+      return ref
+          .read(doctorRepositoryProvider)
+          .getDoctorById(inMemToken.doctorId);
     }
 
     // 2. Check repository tokens
@@ -41,10 +50,14 @@ final trackingDoctorProvider = FutureProvider.family<DoctorEntity?, String>((
     }
 
     // 3. Fallback to cached tokens in SQLite
-    final cached = await ref.read(tokensLocalDataSourceProvider).getCachedTokens();
+    final cached = await ref
+        .read(tokensLocalDataSourceProvider)
+        .getCachedTokens();
     final cachedToken = cached.where((t) => t.id == tokenId).firstOrNull;
     if (cachedToken != null && cachedToken.doctorId.isNotEmpty) {
-      return ref.read(doctorRepositoryProvider).getDoctorById(cachedToken.doctorId);
+      return ref
+          .read(doctorRepositoryProvider)
+          .getDoctorById(cachedToken.doctorId);
     }
   } catch (e) {
     debugPrint('[Tracking] Failed to resolve doctor for tokenId=$tokenId: $e');
@@ -53,8 +66,9 @@ final trackingDoctorProvider = FutureProvider.family<DoctorEntity?, String>((
 });
 
 /// Checks if there is an active token for the current user (strictly latest active appointment)
-final activeTokenLookupProvider = FutureProvider.autoDispose<Token?>((ref) async {
-  // Watch appointmentViewModelProvider so newly booked / fetched tokens trigger immediate re-eval
+final activeTokenLookupProvider = FutureProvider.autoDispose<Token?>((
+  ref,
+) async {
   final appState = ref.watch(appointmentViewModelProvider);
   final currentUser = ref.watch(authRepositoryProvider).getCurrentUser();
 
@@ -73,14 +87,16 @@ final activeTokenLookupProvider = FutureProvider.autoDispose<Token?>((ref) async
   if (appState.tokens.isNotEmpty) {
     final activeList = appState.tokens.where((t) {
       if (!isTokenActive(t)) return false;
-      if (currentUser != null && t.userId.isNotEmpty && t.userId != currentUser.id) {
+      if (currentUser != null && t.userId != currentUser.id) {
         return false;
       }
       return true;
     }).toList();
 
     if (activeList.isNotEmpty) {
-      activeList.sort((a, b) => (b.createdAt ?? '').compareTo(a.createdAt ?? ''));
+      activeList.sort(
+        (a, b) => (b.createdAt ?? '').compareTo(a.createdAt ?? ''),
+      );
       return activeList.first;
     }
   }
@@ -93,7 +109,7 @@ final activeTokenLookupProvider = FutureProvider.autoDispose<Token?>((ref) async
 
     final userActiveTokens = tokens.where((t) {
       if (!isTokenActive(t)) return false;
-      if (currentUser != null && t.userId.isNotEmpty && t.userId != currentUser.id) {
+      if (currentUser != null && t.userId != currentUser.id) {
         return false;
       }
       return true;
@@ -111,11 +127,14 @@ final activeTokenLookupProvider = FutureProvider.autoDispose<Token?>((ref) async
 
   // 3. Fallback to local DB cache directly
   try {
-    final cached = await ref.read(tokensLocalDataSourceProvider).getCachedTokens();
+    final cached = await ref
+        .read(tokensLocalDataSourceProvider)
+        .getCachedTokens();
     if (cached.isNotEmpty) {
       final activeCached = cached.where((r) {
         final s = r.status.toLowerCase().trim();
-        final isActive = s != 'completed' &&
+        final isActive =
+            s != 'completed' &&
             s != 'cancelled' &&
             s != 'canceled' &&
             s != 'done' &&
@@ -123,14 +142,16 @@ final activeTokenLookupProvider = FutureProvider.autoDispose<Token?>((ref) async
             s != 'missed' &&
             s != 'expired';
         if (!isActive) return false;
-        if (currentUser != null && r.userId.isNotEmpty && r.userId != currentUser.id) {
+        if (currentUser != null && r.userId != currentUser.id) {
           return false;
         }
         return true;
       }).toList();
 
       if (activeCached.isNotEmpty) {
-        activeCached.sort((a, b) => (b.createdAt ?? '').compareTo(a.createdAt ?? ''));
+        activeCached.sort(
+          (a, b) => (b.createdAt ?? '').compareTo(a.createdAt ?? ''),
+        );
         final r = activeCached.first;
         return Token(
           id: r.id,
@@ -178,28 +199,17 @@ class TrackingScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: ClinicQColors.appBackground,
-      appBar: AppBar(
-        backgroundColor: ClinicQColors.appBackground,
-        elevation: 0,
-        automaticallyImplyLeading: false,
-        title: const Text(
-          'Live Tracking',
-          style: TextStyle(
+      appBar: BookingAppBar(
+        title: 'Live Tracking',
+        onBack: () => context.go(AppRoutes.home),
+        trailing: IconButton(
+          icon: const Icon(
+            Icons.history_rounded,
             color: ClinicQColors.textPrimary,
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
           ),
+          onPressed: () => context.push(AppRoutes.appointmentHistory),
+          tooltip: 'Appointment History',
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(
-              Icons.history_rounded,
-              color: ClinicQColors.textPrimary,
-            ),
-            onPressed: () => context.push(AppRoutes.appointmentHistory),
-            tooltip: 'Appointment History',
-          ),
-        ],
       ),
       body: hasSpecificToken
           ? _TrackingBody(tokenId: tokenId!)
@@ -283,16 +293,15 @@ class _TrackingBody extends ConsumerWidget {
   const _TrackingBody({required this.tokenId});
 
   String _formatLastSynced(DateTime dateTime) {
-    final hrs = dateTime.hour.toString().padLeft(2, '0');
-    final mins = dateTime.minute.toString().padLeft(2, '0');
-    final secs = dateTime.second.toString().padLeft(2, '0');
-    return '$hrs:$mins:$secs';
+    return TimeUtils.formatDateTimeTo12Hour(dateTime, includeSeconds: true);
   }
 
   void _showCancelDialog(BuildContext context, WidgetRef ref) {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
+        backgroundColor: Colors.white,
+        surfaceTintColor: Colors.transparent,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: const Text(
           'Cancel Appointment',
@@ -317,7 +326,14 @@ class _TrackingBody extends ConsumerWidget {
               ),
             ),
             onPressed: () async {
-              // Show non-dismissible loading overlay spinner
+              final container = ProviderScope.containerOf(context);
+              final scaffoldMessenger = ScaffoldMessenger.of(context);
+              final router = GoRouter.of(context);
+
+              // Dismiss confirmation dialog first
+              Navigator.pop(ctx);
+
+              // Show loading overlay
               showDialog(
                 context: context,
                 barrierDismissible: false,
@@ -326,37 +342,31 @@ class _TrackingBody extends ConsumerWidget {
                 },
               );
 
-              final trackingNotifier = ref.read(
+              final trackingNotifier = container.read(
                 trackingViewModelProvider(tokenId).notifier,
               );
               final success = await trackingNotifier.cancelTrackingToken();
 
-              // Dismiss loading overlay
+              // Dismiss loading dialog
               if (context.mounted) {
-                Navigator.pop(context);
+                Navigator.of(context, rootNavigator: true).pop();
               }
-              // Dismiss confirmation dialog
-              Navigator.pop(ctx);
 
               if (success) {
-                ref.invalidate(activeTokenLookupProvider);
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Appointment cancelled successfully.'),
-                    ),
-                  );
-                  context.go(AppRoutes.home);
-                }
+                container.invalidate(activeTokenLookupProvider);
+                scaffoldMessenger.showSnackBar(
+                  const SnackBar(
+                    content: Text('Appointment cancelled successfully.'),
+                  ),
+                );
+                router.go(AppRoutes.home);
               } else {
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Failed to cancel appointment.'),
-                      backgroundColor: ClinicQColors.errorIcon,
-                    ),
-                  );
-                }
+                scaffoldMessenger.showSnackBar(
+                  const SnackBar(
+                    content: Text('Failed to cancel appointment.'),
+                    backgroundColor: ClinicQColors.errorIcon,
+                  ),
+                );
               }
             },
             child: const Text(
@@ -430,110 +440,239 @@ class _TrackingBody extends ConsumerWidget {
                   )
                 : SingleChildScrollView(
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 24.0,
-                      vertical: 16.0,
+                      horizontal: 20.0,
+                      vertical: 10.0,
                     ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // 1. Premium Header Gradient Card
-                        doctorAsync.when(
-                          loading: () => const Center(child: ClinicQLoader()),
-                          error: (err, stack) => TrackingHeaderCard(
-                            snapshot: trackingState.snapshot!,
-                          ),
-                          data: (doctor) => TrackingHeaderCard(
-                            snapshot: trackingState.snapshot!,
-                            doctor: doctor,
-                          ),
-                        ),
+                    child: Builder(
+                      builder: (context) {
+                        final snapshot = trackingState.snapshot;
+                        final doctor = doctorAsync.value;
+                        final isQueueRunning =
+                            snapshot != null &&
+                            snapshot.currentTokenNumber > 0 &&
+                            snapshot.status != 'waiting' &&
+                            snapshot.status != 'upcoming' &&
+                            snapshot.status != 'not_started' &&
+                            snapshot.status != 'pending';
 
-                        const SizedBox(height: 20),
-
-                        // 2. Stats Grid Row (Wait Time & Patients In Queue)
-                        if (trackingState.snapshot != null) ...[
-                          TrackingStatsGrid(snapshot: trackingState.snapshot!),
-                          const SizedBox(height: 24),
-
-                          // 3. Horizontal Visual Lineup of Queue
-                          TrackingQueueLineup(
-                            snapshot: trackingState.snapshot!,
-                            doctor: doctorAsync.value,
-                          ),
-                          const SizedBox(height: 24),
-
-                          // 4. Queue Status Vertical Timeline
-                          TrackingQueueTimeline(
-                            snapshot: trackingState.snapshot!,
-                          ),
-                          const SizedBox(height: 24),
-
-                          // 5. Notification banner
-                          Container(
-                            padding: const EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              color: ClinicQColors.infoBackground,
-                              borderRadius: BorderRadius.circular(16),
-                              border: Border.all(
-                                color: ClinicQColors.infoBorder.withOpacity(
-                                  0.3,
-                                ),
-                              ),
-                            ),
-                            child: Row(
-                              children: [
-                                const Icon(
-                                  Icons.notifications_active_rounded,
-                                  color: ClinicQColors.infoIcon,
-                                  size: 20,
-                                ),
-                                const SizedBox(width: 12),
-                                const Expanded(
-                                  child: Text(
-                                    'We\'ll notify you when your turn is near.',
-                                    style: TextStyle(
-                                      color: ClinicQColors.infoText,
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.w600,
+                        if (!isQueueRunning && snapshot != null) {
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // Date & Status Row
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    BookingDateUtils.formatTodayHeader(
+                                      DateTime.now(),
+                                    ),
+                                    style: const TextStyle(
+                                      color: ClinicQColors.textPrimary,
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.w800,
                                     ),
                                   ),
+                                  const QueueStatusBadge(
+                                    text: 'Queue not started',
+                                    backgroundColor: Color(0xFFFFFBEB),
+                                    borderColor: Color(0xFFFDE68A),
+                                    textColor: Color(0xFFD97706),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 16),
+                              // Upcoming Appointment Token Card (Using running queue gradient theme)
+                              UpcomingTokenCard(
+                                tokenNumber: snapshot.yourTokenNumber,
+                                doctor: doctor,
+                                customStartTime: doctor?.startTime,
+                              ),
+                              const SizedBox(height: 16),
+
+                              // Informational Notice on Queue Not Started
+                              Container(
+                                width: double.infinity,
+                                padding: const EdgeInsets.all(16),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFEFF6FF),
+                                  borderRadius: BorderRadius.circular(18),
+                                  border: Border.all(
+                                    color: const Color(0xFFBFDBFE),
+                                  ),
                                 ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        Container(
+                                          padding: const EdgeInsets.all(7),
+                                          decoration: const BoxDecoration(
+                                            color: Color(0xFFDBEAFE),
+                                            shape: BoxShape.circle,
+                                          ),
+                                          child: const Icon(
+                                            Icons.notifications_active_outlined,
+                                            color: Color(0xFF1D4ED8),
+                                            size: 18,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 10),
+                                        const Expanded(
+                                          child: Text(
+                                            'Queue has not started yet',
+                                            style: TextStyle(
+                                              color: Color(0xFF1E3A8A),
+                                              fontSize: 14.5,
+                                              fontWeight: FontWeight.w800,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 10),
+                                    Text(
+                                      'The doctor is scheduled to start seeing patients at ${TimeUtils.formatTo12Hour(doctor?.startTime ?? "09:00")}. Live queue tracking and wait time metrics will automatically activate as soon as consultations begin.\n\nYou will receive a notification when the queue starts and when your turn is close, so you don\'t have to wait in line.',
+                                      style: const TextStyle(
+                                        color: Color(0xFF1E40AF),
+                                        fontSize: 13,
+                                        height: 1.45,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+
+                              // Read-only Alert card
+                              const TrackingAlertCard(),
+                              const SizedBox(height: 20),
+
+                              // Restyled Cancel Button
+                              if (snapshot.status != 'cancelled')
+                                Padding(
+                                  padding: const EdgeInsets.only(
+                                    bottom: 24.0,
+                                    top: 4.0,
+                                  ),
+                                  child: ClinicQOutlinedButton(
+                                    label: 'Cancel my token',
+                                    borderColor: const Color(0xFFFECACA),
+                                    textColor: const Color(0xFFDC2626),
+                                    onPressed: () =>
+                                        _showCancelDialog(context, ref),
+                                  ),
+                                ),
+                            ],
+                          );
+                        }
+
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Date & Queue Status Row in Content
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  BookingDateUtils.formatTodayHeader(
+                                    DateTime.now(),
+                                  ),
+                                  style: const TextStyle(
+                                    color: ClinicQColors.textPrimary,
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
+                                const QueueStatusBadge(text: 'Queue running'),
                               ],
                             ),
-                          ),
-                          const SizedBox(height: 12),
+                            const SizedBox(height: 14),
 
-                          // Last synced timestamp
-                          Center(
-                            child: Text(
-                              'Last synced at: ${_formatLastSynced(trackingState.snapshot!.lastSyncedAt)}',
-                              style: const TextStyle(
-                                color: ClinicQColors.textTertiary,
-                                fontSize: 12,
+                            // Tracking Card from Reference Design
+                            if (snapshot != null) ...[
+                              TodayQueueCard(
+                                nowServingNumber: snapshot.currentTokenNumber,
+                                yourTokenNumber: snapshot.yourTokenNumber,
+                                label: 'Your token',
                               ),
-                            ),
-                          ),
-                          const SizedBox(height: 32),
-                        ],
+                              const SizedBox(height: 14),
 
-                        // 6. Cancel Action
-                        if (trackingState.snapshot?.status != 'cancelled')
-                          SizedBox(
-                            width: double.infinity,
-                            child: TextButton(
-                              onPressed: () => _showCancelDialog(context, ref),
-                              child: const Text(
-                                'Cancel Appointment',
-                                style: TextStyle(
-                                  color: ClinicQColors.errorIcon,
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.bold,
+                              // Two Stat Boxes: Ahead of you & About (wait time)
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: MetricStatBox(
+                                      label: 'Ahead of you',
+                                      value: '${snapshot.patientsAheadCount}',
+                                    ),
+                                  ),
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    child: MetricStatBox(
+                                      label: 'About',
+                                      value:
+                                          snapshot.estimatedWaitMinutes != null
+                                          ? '${snapshot.estimatedWaitMinutes} min'
+                                          : (snapshot.status == 'paused' ||
+                                                    snapshot.queueStatus ==
+                                                        'PAUSED'
+                                                ? 'Paused'
+                                                : '--'),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 20),
+
+                              // Horizontal Visual Lineup of Queue (Tokens without '#')
+                              TrackingQueueLineup(
+                                snapshot: snapshot,
+                                doctor: doctorAsync.value,
+                              ),
+                              const SizedBox(height: 20),
+
+                              // Queue Status Timeline
+                              TrackingQueueTimeline(snapshot: snapshot),
+                              const SizedBox(height: 16),
+
+                              // Last synced timestamp
+                              Center(
+                                child: Text(
+                                  'Last synced at: ${_formatLastSynced(snapshot.lastSyncedAt)}',
+                                  style: const TextStyle(
+                                    color: ClinicQColors.textTertiary,
+                                    fontSize: 12,
+                                  ),
                                 ),
                               ),
-                            ),
-                          ),
-                        const SizedBox(height: 24),
-                      ],
+                              const SizedBox(height: 14),
+
+                              // Alert Me Widget placed below Last synced and above Cancel button
+                              const TrackingAlertCard(),
+                              const SizedBox(height: 20),
+                            ],
+
+                            // Restyled Cancel Button (Secondary & Destructive in tone, sits safely above bottom bar)
+                            if (snapshot?.status != 'cancelled')
+                              Padding(
+                                padding: const EdgeInsets.only(
+                                  bottom: 24.0,
+                                  top: 4.0,
+                                ),
+                                child: ClinicQOutlinedButton(
+                                  label: 'Cancel my token',
+                                  borderColor: const Color(0xFFFECACA),
+                                  textColor: const Color(0xFFDC2626),
+                                  onPressed: () =>
+                                      _showCancelDialog(context, ref),
+                                ),
+                              ),
+                          ],
+                        );
+                      },
                     ),
                   ),
           ),
