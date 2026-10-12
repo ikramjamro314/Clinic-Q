@@ -104,6 +104,10 @@ final appointmentViewModelProvider = NotifierProvider<AppointmentNotifier, Appoi
   AppointmentNotifier.new,
 );
 
-final trackingViewModelProvider = NotifierProvider.family<TrackingNotifier, TrackingState, String>(
-  TrackingNotifier.new,
-);
+/// Auto-dispose so the live socket and snapshot are torn down as soon as no
+/// tracking/home widget observes this token — stale queue state can never
+/// linger between visits.
+final trackingViewModelProvider =
+    NotifierProvider.autoDispose.family<TrackingNotifier, TrackingState, String>(
+      TrackingNotifier.new,
+    );

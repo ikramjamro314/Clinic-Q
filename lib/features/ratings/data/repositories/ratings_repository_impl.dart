@@ -51,12 +51,12 @@ class RatingsRepositoryImpl implements RatingsRepository {
     required String userId,
   }) async {
     try {
+      final validStars = stars.clamp(1, 5);
       final response = await _dio.post(
-        '/api/patient/ratings',
+        '/api/patient/doctors/$doctorId/ratings',
         data: {
-          'doctorId': doctorId,
           'clinicId': clinicId,
-          'stars': stars,
+          'stars': validStars,
           'review': review,
           'userId': userId,
         },
@@ -71,15 +71,21 @@ class RatingsRepositoryImpl implements RatingsRepository {
   ReviewEntity _fromBackendJson(Map<String, dynamic> json) {
     final stars = json['stars'] as num? ?? json['rating'] as num? ?? 5.0;
     final patient = json['patient'] as Map<String, dynamic>?;
-    final patientName = patient != null ? (patient['name'] as String?) : null;
+    final user = json['user'] as Map<String, dynamic>?;
+    final patientName = patient != null ? (patient['name'] as String? ?? patient['fullName'] as String?) : null;
+    final userName = user != null ? (user['name'] as String? ?? user['fullName'] as String?) : null;
+
+    final photoUrl = patient != null
+        ? (patient['photoUrl'] as String? ?? patient['photo_url'] as String? ?? patient['avatarUrl'] as String?)
+        : (user != null ? (user['photoUrl'] as String? ?? user['photo_url'] as String? ?? user['avatarUrl'] as String?) : null);
 
     return ReviewEntity(
       id: json['id'] as String? ?? '',
-      reviewerName: patientName ?? json['patientName'] as String? ?? json['reviewerName'] as String? ?? 'Anonymous Patient',
-      reviewerPhotoUrl: patient != null ? (patient['photoUrl'] as String? ?? patient['photo_url'] as String?) : null,
+      reviewerName: patientName ?? userName ?? json['patientName'] as String? ?? json['userName'] as String? ?? json['reviewerName'] as String? ?? 'Anonymous Patient',
+      reviewerPhotoUrl: photoUrl ?? json['photoUrl'] as String? ?? json['photo_url'] as String?,
       rating: stars.toDouble(),
       timeAgo: _formatTimeAgo(json['createdAt'] as String? ?? json['created_at'] as String?),
-      text: json['review'] as String? ?? json['text'] as String? ?? '',
+      text: json['review'] as String? ?? json['text'] as String? ?? json['comment'] as String? ?? '',
     );
   }
 

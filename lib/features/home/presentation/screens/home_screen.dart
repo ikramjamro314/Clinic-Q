@@ -1,6 +1,8 @@
 import 'package:clinic_q/features/clinic/presentation/widgets/clinic_card_skeleton.dart';
 import 'package:clinic_q/features/doctor/presentation/widgets/doctor_card_skeleton.dart';
 import 'package:clinic_q/features/home/presentation/widgets/home_section_header.dart';
+import 'package:clinic_q/features/tracking/domain/entities/tracking_snapshot.dart';
+import 'package:clinic_q/features/tracking/presentation/providers.dart';
 import 'package:clinic_q/features/tracking/presentation/screens/tracking_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -18,6 +20,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../app/app_routes.dart';
 import '../widgets/home_doctor_card.dart';
 import '../widgets/home_clinic_card.dart';
+import '../widgets/home_empty_section_card.dart';
 import '../widgets/home_bottom_nav_bar.dart';
 
 import '../../../../core/widgets/feedback/offline_banner.dart';
@@ -32,6 +35,23 @@ class HomeScreen extends ConsumerWidget {
     final homeState = ref.watch(homeViewModelProvider);
     final homeNotifier = ref.read(homeViewModelProvider.notifier);
     final activeToken = ref.watch(activeTokenLookupProvider).value;
+
+    // Safety net: even if a closed token slips through the active-token
+    // lookup, hide the LIVE QUEUE banner as soon as its tracking snapshot
+    // reports a terminal status (cancelled / completed / skipped / ...).
+    // While live data is still loading (status == null), keep the banner.
+    final activeTokenStatus = activeToken != null
+        ? ref
+              .watch(trackingViewModelProvider(activeToken.id))
+              .snapshot
+              ?.status
+              .toLowerCase()
+              .trim()
+        : null;
+    final showActiveTokenBanner =
+        activeToken != null &&
+        (activeTokenStatus == null ||
+            !TrackingSnapshot.closedStatuses.contains(activeTokenStatus));
 
     if (homeState.isLoading && homeState.bannerData == null) {
       return Scaffold(
@@ -164,7 +184,7 @@ class HomeScreen extends ConsumerWidget {
                       const SizedBox(height: 20),
 
                       // Doctor Consultation or Active Tracking Banner
-                      if (activeToken != null)
+                      if (showActiveTokenBanner)
                         HomeActiveTokenBanner(
                           token: activeToken,
                           onTap: () =>
@@ -190,52 +210,68 @@ class HomeScreen extends ConsumerWidget {
                       // Top Doctor list section header
                       HomeSectionHeader(
                         title: 'Top Doctor',
+                        showAction: homeState.doctors.isNotEmpty,
                         onActionTap: () => context.go(AppRoutes.doctors),
                       ),
                       const SizedBox(height: 14),
-                      SizedBox(
-                        height: 170,
-                        child: ListView.separated(
-                          scrollDirection: Axis.horizontal,
-                          itemCount: homeState.doctors.length,
-                          separatorBuilder: (context, index) =>
-                              const SizedBox(width: 14),
-                          itemBuilder: (context, index) {
-                            final doc = homeState.doctors[index];
-                            return HomeDoctorCard(
-                              doctor: doc,
-                              onTap: () {
-                                context.push('/doctors/${doc.id}');
-                              },
-                            );
-                          },
+                      if (homeState.doctors.isNotEmpty)
+                        SizedBox(
+                          height: 170,
+                          child: ListView.separated(
+                            scrollDirection: Axis.horizontal,
+                            itemCount: homeState.doctors.length,
+                            separatorBuilder: (context, index) =>
+                                const SizedBox(width: 14),
+                            itemBuilder: (context, index) {
+                              final doc = homeState.doctors[index];
+                              return HomeDoctorCard(
+                                doctor: doc,
+                                onTap: () {
+                                  context.push('/doctors/${doc.id}');
+                                },
+                              );
+                            },
+                          ),
+                        )
+                      else
+                        const HomeEmptySectionCard(
+                          icon: Icons.person_search_outlined,
+                          title: 'No doctors added yet',
+                          subtitle: 'Featured doctors will appear here once available.',
                         ),
-                      ),
 
                       const SizedBox(height: 24),
 
                       // Top Hospitals/Clinics list section header
                       HomeSectionHeader(
                         title: 'Top Clinics',
+                        showAction: homeState.clinics.isNotEmpty,
                         onActionTap: () => context.go(AppRoutes.clinics),
                       ),
                       const SizedBox(height: 14),
-                      ListView.separated(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        itemCount: homeState.clinics.length,
-                        separatorBuilder: (context, index) =>
-                            const SizedBox(height: 12),
-                        itemBuilder: (context, index) {
-                          final clinic = homeState.clinics[index];
-                          return HomeClinicCard(
-                            clinic: clinic,
-                            onTap: () {
-                              context.push('${AppRoutes.clinics}/${clinic.id}');
-                            },
-                          );
-                        },
-                      ),
+                      if (homeState.clinics.isNotEmpty)
+                        ListView.separated(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemCount: homeState.clinics.length,
+                          separatorBuilder: (context, index) =>
+                              const SizedBox(height: 12),
+                          itemBuilder: (context, index) {
+                            final clinic = homeState.clinics[index];
+                            return HomeClinicCard(
+                              clinic: clinic,
+                              onTap: () {
+                                context.push('${AppRoutes.clinics}/${clinic.id}');
+                              },
+                            );
+                          },
+                        )
+                      else
+                        const HomeEmptySectionCard(
+                          icon: Icons.local_hospital_outlined,
+                          title: 'No clinics added yet',
+                          subtitle: 'Verified clinics will appear here once registered.',
+                        ),
 
                       const SizedBox(height: 20),
                     ],

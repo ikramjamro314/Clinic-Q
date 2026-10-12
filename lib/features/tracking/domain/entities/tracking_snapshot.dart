@@ -17,6 +17,10 @@ class TrackingSnapshot {
   final String? activeTokenId;
   final String? appointmentDate;
 
+  // Direct boolean flags from the /queue/live API response
+  final bool isQueueActive;
+  final bool isQueuePaused;
+
   // Cache-aside / stale status flags
   final bool isFromCache;
   final bool isStale;
@@ -35,9 +39,31 @@ class TrackingSnapshot {
     this.queueStatus,
     this.activeTokenId,
     this.appointmentDate,
+    this.isQueueActive = false,
+    this.isQueuePaused = false,
     this.isFromCache = false,
     this.isStale = false,
   });
+
+  static const Set<String> cancelledStatuses = {'cancelled', 'canceled'};
+  static const Set<String> closedStatuses = {
+    'completed',
+    'done',
+    'rejected',
+    'missed',
+    'expired',
+    'skipped',
+    'no_show',
+  };
+
+  String get normalizedStatus => status.toLowerCase().trim();
+
+  bool get isCancelled => cancelledStatuses.contains(normalizedStatus);
+
+  bool get isCompleted => normalizedStatus == 'completed';
+
+  bool get isClosed =>
+      isCancelled || isCompleted || closedStatuses.contains(normalizedStatus);
 
   TrackingSnapshot copyWith({
     String? tokenId,
@@ -53,6 +79,8 @@ class TrackingSnapshot {
     String? queueStatus,
     String? activeTokenId,
     String? appointmentDate,
+    bool? isQueueActive,
+    bool? isQueuePaused,
     bool? isFromCache,
     bool? isStale,
   }) {
@@ -70,6 +98,8 @@ class TrackingSnapshot {
       queueStatus: queueStatus ?? this.queueStatus,
       activeTokenId: activeTokenId ?? this.activeTokenId,
       appointmentDate: appointmentDate ?? this.appointmentDate,
+      isQueueActive: isQueueActive ?? this.isQueueActive,
+      isQueuePaused: isQueuePaused ?? this.isQueuePaused,
       isFromCache: isFromCache ?? this.isFromCache,
       isStale: isStale ?? this.isStale,
     );

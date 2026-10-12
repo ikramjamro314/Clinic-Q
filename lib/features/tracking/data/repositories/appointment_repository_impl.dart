@@ -72,19 +72,42 @@ class AppointmentRepositoryImpl implements AppointmentRepository {
         userId: userId,
       );
 
-      final companions = networkTokens
+      // Local cancellations are authoritative: if the user cancelled a token
+      // (cache row marked cancelled), a stale network response must never
+      // resurrect it as active — e.g. when the cancel API call failed or the
+      // backend has not processed the cancellation yet.
+      final locallyCancelledIds = cachedRows
+          .where((r) {
+            final s = r.status.toLowerCase().trim();
+            return s == 'cancelled' || s == 'canceled';
+          })
+          .map((r) => r.id)
+          .toSet();
+
+      final mergedTokens = networkTokens.map((t) {
+        final networkStatus = t.status.toLowerCase().trim();
+        final networkCancelled =
+            networkStatus == 'cancelled' || networkStatus == 'canceled';
+        if (locallyCancelledIds.contains(t.id) && !networkCancelled) {
+          return t.copyWith(status: 'cancelled');
+        }
+        return t;
+      }).toList();
+
+      final companions = mergedTokens
           .map((t) => _toDriftCompanion(t))
           .toList();
       await _localDataSource.upsertTokens(companions);
 
       List<Token> filteredTokens = (userId != null && userId.isNotEmpty)
-          ? networkTokens
+          ? mergedTokens
               .where((t) => t.userId == userId)
               .toList()
-          : networkTokens;
+          : mergedTokens;
 
       debugPrint(
-        '[Appointment] Fetched ${filteredTokens.length} tokens from NETWORK',
+        '[Appointment] Fetched ${filteredTokens.length} tokens from NETWORK '
+        '(locally cancelled overrides applied: ${locallyCancelledIds.length})',
       );
       return filteredTokens;
     } catch (error) {
@@ -212,7 +235,7 @@ class AppointmentRepositoryImpl implements AppointmentRepository {
     }).toList();
 
     final patientsAheadCount = todayTokens.where((t) {
-      return t.status != 'completed' && t.status != 'cancelled';
+      return t.isActiveStatus;
     }).length;
 
     int nowServingNumber = 0;

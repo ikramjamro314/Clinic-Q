@@ -189,9 +189,9 @@ class _AppointmentHistoryCard extends ConsumerWidget {
         .watch(doctorRepositoryProvider)
         .getDoctorById(token.doctorId);
 
-    final isCompleted = token.status == 'completed';
-    final isCancelled = token.status == 'cancelled';
-    final isActive = !isCompleted && !isCancelled;
+    final isCompleted = token.isCompletedStatus;
+    final isCancelled = token.isCancelledStatus;
+    final isActive = token.isActiveStatus;
 
     Color badgeColor;
     Color textColor;

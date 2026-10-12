@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:clinic_q/app/theme/clinic_q_colors.dart';
 
 class OnboardingSlide extends StatelessWidget {
@@ -7,75 +6,65 @@ class OnboardingSlide extends StatelessWidget {
     super.key,
     required this.title,
     required this.description,
-    this.imageAssetPath,
-    this.svgAssetPath,
+    required this.imageAssetPath,
     required this.stepNumber,
     this.totalSteps = 3,
     this.onSkip,
     this.showSkip = true,
-  }) : assert(imageAssetPath != null || svgAssetPath != null, 'Either imageAssetPath or svgAssetPath must be provided');
+    required this.cardWidth,
+    required this.cardHeight,
+    required this.cardCornerRadius,
+    required this.topSpacing,
+    required this.cardToTextSpacing,
+    required this.textToDescSpacing,
+    required this.contentHorizontalPadding,
+    required this.headingFontSize,
+    required this.descFontSize,
+  });
 
   final String title;
   final String description;
-  final String? imageAssetPath;
-  final String? svgAssetPath;
+  final String imageAssetPath;
   final int stepNumber;
   final int totalSteps;
   final VoidCallback? onSkip;
   final bool showSkip;
 
-  Widget _buildIllustration() {
-    final asset = imageAssetPath ?? svgAssetPath ?? '';
-    if (asset.toLowerCase().endsWith('.svg')) {
-      return SvgPicture.asset(
-        asset,
-        fit: BoxFit.contain,
-      );
-    }
-    return Image.asset(
-      asset,
-      fit: BoxFit.contain,
-    );
-  }
+  final double cardWidth;
+  final double cardHeight;
+  final double cardCornerRadius;
+  final double topSpacing;
+  final double cardToTextSpacing;
+  final double textToDescSpacing;
+  final double contentHorizontalPadding;
+  final double headingFontSize;
+  final double descFontSize;
 
   @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Top Image/Illustration Panel
-        Expanded(
-          flex: 11,
-          child: Container(
-            width: double.infinity,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(32),
-              border: Border.all(color: ClinicQColors.dividerLight, width: 1.0),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.03),
-                  blurRadius: 16,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(32),
+        // Spacing below status bar
+        SizedBox(height: topSpacing),
+
+        // Edge-to-edge image card with 540:680 aspect ratio and corner radius ~7.5% of card width
+        Center(
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(cardCornerRadius),
+            child: SizedBox(
+              width: cardWidth,
+              height: cardHeight,
               child: Stack(
+                fit: StackFit.expand,
                 children: [
-                  // Illustration / Image
-                  Positioned.fill(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 24,
-                      ),
-                      child: _buildIllustration(),
-                    ),
+                  Image.asset(
+                    imageAssetPath,
+                    fit: BoxFit.cover,
+                    alignment: Alignment.center,
                   ),
 
-                  // Top Overlays: Skip (top-left) and Step Badge (top-right)
+                  // Top overlays: Skip pill (left) and Step chip (right)
                   Positioned(
                     top: 16,
                     left: 16,
@@ -84,26 +73,32 @@ class OnboardingSlide extends StatelessWidget {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        // Skip Button
                         if (showSkip && onSkip != null)
                           GestureDetector(
                             onTap: onSkip,
                             behavior: HitTestBehavior.opaque,
                             child: Container(
                               padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 6,
+                                horizontal: 14,
+                                vertical: 7,
                               ),
                               decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.85),
+                                color: ClinicQColors.cardBackground,
                                 borderRadius: BorderRadius.circular(20),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.08),
+                                    blurRadius: 8,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ],
                               ),
                               child: const Text(
                                 'Skip',
                                 style: TextStyle(
-                                  fontSize: 14,
+                                  fontSize: 13,
                                   fontWeight: FontWeight.w600,
-                                  color: ClinicQColors.textSecondary,
+                                  color: ClinicQColors.textPrimary,
                                 ),
                               ),
                             ),
@@ -111,18 +106,18 @@ class OnboardingSlide extends StatelessWidget {
                         else
                           const SizedBox.shrink(),
 
-                        // Step Pill Badge
+                        // White chip with teal sparkle icon and dark text
                         Container(
                           padding: const EdgeInsets.symmetric(
                             horizontal: 12,
                             vertical: 6,
                           ),
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.92),
+                            color: ClinicQColors.cardBackground,
                             borderRadius: BorderRadius.circular(20),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.04),
+                                color: Colors.black.withOpacity(0.08),
                                 blurRadius: 8,
                                 offset: const Offset(0, 2),
                               ),
@@ -157,38 +152,38 @@ class OnboardingSlide extends StatelessWidget {
           ),
         ),
 
-        const SizedBox(height: 28),
+        SizedBox(height: cardToTextSpacing),
 
-        // Text Content Area: Bold Headline & Supporting Description
-        Expanded(
-          flex: 6,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 4),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 26,
-                    fontWeight: FontWeight.w800,
-                    color: ClinicQColors.textPrimary,
-                    letterSpacing: -0.5,
-                    height: 1.2,
-                  ),
-                ),
-                const SizedBox(height: 14),
-                Text(
-                  description,
-                  style: const TextStyle(
-                    fontSize: 15,
-                    color: ClinicQColors.textSecondary,
-                    height: 1.5,
-                    fontWeight: FontWeight.w400,
-                  ),
-                ),
-              ],
+        // Bold headline (2 lines max, left aligned, aligned inside card left edge)
+        Padding(
+          padding: EdgeInsets.symmetric(horizontal: contentHorizontalPadding),
+          child: Text(
+            title,
+            style: TextStyle(
+              fontSize: headingFontSize,
+              fontWeight: FontWeight.w900,
+              color: ClinicQColors.textPrimary,
+              letterSpacing: -0.5,
+              height: 1.2,
             ),
+            maxLines: 2,
+          ),
+        ),
+
+        SizedBox(height: textToDescSpacing),
+
+        // Description (3 lines max, line height 1.5, colour textSecondary)
+        Padding(
+          padding: EdgeInsets.symmetric(horizontal: contentHorizontalPadding),
+          child: Text(
+            description,
+            style: TextStyle(
+              fontSize: descFontSize,
+              color: ClinicQColors.textSecondary,
+              height: 1.5,
+              fontWeight: FontWeight.w500,
+            ),
+            maxLines: 3,
           ),
         ),
       ],

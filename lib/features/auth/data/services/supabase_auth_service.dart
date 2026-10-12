@@ -42,6 +42,18 @@ class SupabaseAuthService {
         );
       }
 
+      // Ensure patient role is saved in user metadata
+      if (user.userMetadata?['role'] == null) {
+        try {
+          final updated = await _auth.updateUser(
+            sb.UserAttributes(data: {'role': 'patient'}),
+          );
+          return updated.user ?? user;
+        } catch (e) {
+          debugPrint('>>> Failed to set role metadata on email user: $e');
+        }
+      }
+
       final session = sb.Supabase.instance.client.auth.currentSession;
 
       print("this is the session: ${session?.toJson()}");
@@ -62,6 +74,7 @@ class SupabaseAuthService {
       final response = await _auth.signUp(
         email: email.trim(),
         password: password,
+        data: {'role': 'patient'},
       );
 
       debugPrint(
@@ -157,6 +170,19 @@ class SupabaseAuthService {
         throw AuthException('Google sign-in could not be completed.');
       }
       debugPrint('>>> GOOGLE SIGN IN - success, user=${user.id}');
+
+      // Ensure patient role is saved in user metadata
+      if (user.userMetadata?['role'] == null) {
+        try {
+          final updated = await _auth.updateUser(
+            sb.UserAttributes(data: {'role': 'patient'}),
+          );
+          return updated.user ?? user;
+        } catch (e) {
+          debugPrint('>>> Failed to set role metadata on Google user: $e');
+        }
+      }
+
       final session = sb.Supabase.instance.client.auth.currentSession;
       print("this is the session: ${session?.toJson()}");
       return user;

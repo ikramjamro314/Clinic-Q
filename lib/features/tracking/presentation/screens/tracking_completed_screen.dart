@@ -232,6 +232,22 @@ class _TrackingCompletedScreenState
                           if (success && mounted) {
                             ref.invalidate(activeTokenLookupProvider);
                             context.go(AppRoutes.home);
+                          } else if (!success && mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  ref
+                                          .read(
+                                            trackingViewModelProvider(
+                                              widget.tokenId,
+                                            ),
+                                          )
+                                          .errorMessage ??
+                                      'Failed to submit feedback. Please try again.',
+                                ),
+                                backgroundColor: Colors.redAccent,
+                              ),
+                            );
                           }
                         },
                       ),

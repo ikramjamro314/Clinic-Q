@@ -48,6 +48,30 @@ class Token {
     this.cacheError,
   });
 
+  static const Set<String> _cancelledStatuses = {'cancelled', 'canceled'};
+  static const Set<String> _closedStatuses = {
+    'completed',
+    'done',
+    'rejected',
+    'missed',
+    'expired',
+    'skipped',
+    'no_show',
+  };
+
+  String get normalizedStatus => status.toLowerCase().trim();
+
+  bool get isCancelledStatus => _cancelledStatuses.contains(normalizedStatus);
+
+  bool get isCompletedStatus => normalizedStatus == 'completed';
+
+  bool get isClosedStatus =>
+      isCancelledStatus ||
+      isCompletedStatus ||
+      _closedStatuses.contains(normalizedStatus);
+
+  bool get isActiveStatus => !isClosedStatus;
+
   Token copyWith({
     String? id,
     String? doctorId,

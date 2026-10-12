@@ -1,19 +1,16 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
-import 'package:drift/drift.dart' as d;
 import 'package:socket_io_client/socket_io_client.dart' as IO;
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import '../../../../core/error/app_exception.dart';
 import '../../../../core/error/exception_mapper.dart';
-import '../../../../core/local/app_database.dart';
 import '../../domain/entities/tracking_snapshot.dart';
 import '../../domain/entities/queue_preview.dart';
 import '../../domain/repositories/tracking_repository.dart';
 import '../../domain/repositories/appointment_repository.dart';
 import '../local/tracking_local_data_source.dart';
 import '../services/tracking_api_service.dart';
-import '../models/tracking_snapshot_model.dart';
 
 class TrackingRepositoryImpl implements TrackingRepository {
   final TrackingApiService _apiService;
@@ -169,6 +166,12 @@ class TrackingRepositoryImpl implements TrackingRepository {
         socket!.on('token:created', onDataReceived);
         socket!.on('queue:updated', onDataReceived);
         socket!.on('ETA_UPDATED', onDataReceived);
+        // Fired when receptionist or system cancels / skips a token
+        socket!.on('token:cancelled', onDataReceived);
+        socket!.on('token:canceled', onDataReceived);
+        socket!.on('token:skipped', onDataReceived);
+        socket!.on('token:missed', onDataReceived);
+        socket!.on('token:updated', onDataReceived);
 
         socket!.onDisconnect((_) {
           debugPrint('[TrackingWS] Disconnected from server');
@@ -224,34 +227,6 @@ class TrackingRepositoryImpl implements TrackingRepository {
       debugPrint('[Tracking] Network request failed: ${appEx.message}');
       throw appEx;
     }
-  }
-
-  TrackingCacheTableCompanion _toDriftCompanion(TrackingSnapshot entity) {
-    return TrackingCacheTableCompanion(
-      tokenId: d.Value(entity.tokenId),
-      currentTokenNumber: d.Value(entity.currentTokenNumber),
-      yourTokenNumber: d.Value(entity.yourTokenNumber),
-      patientsAheadCount: d.Value(entity.patientsAheadCount),
-      estimatedWaitMinutes: d.Value(entity.estimatedWaitMinutes),
-      status: d.Value(entity.status),
-      lastSyncedAt: d.Value(entity.lastSyncedAt),
-      isFromCache: d.Value(entity.isFromCache),
-      isStale: d.Value(entity.isStale),
-    );
-  }
-
-  TrackingSnapshot _fromDriftData(TrackingCacheTableData r) {
-    return TrackingSnapshot(
-      tokenId: r.tokenId,
-      currentTokenNumber: r.currentTokenNumber ?? 0,
-      yourTokenNumber: r.yourTokenNumber ?? 0,
-      patientsAheadCount: r.patientsAheadCount ?? 0,
-      estimatedWaitMinutes: r.estimatedWaitMinutes,
-      status: r.status ?? 'waiting',
-      lastSyncedAt: r.lastSyncedAt,
-      isFromCache: r.isFromCache,
-      isStale: r.isStale,
-    );
   }
 
   @override

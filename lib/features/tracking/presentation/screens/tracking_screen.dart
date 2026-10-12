@@ -7,7 +7,6 @@ import '../../../../app/app_routes.dart';
 import '../../../../app/theme/clinic_q_colors.dart';
 import '../../../../core/widgets/feedback/clinicq_loader.dart';
 import '../../../../core/widgets/feedback/clinicq_error_widget.dart';
-import '../../../../core/widgets/feedback/offline_banner.dart';
 import '../../../../core/widgets/buttons/clinicq_button.dart';
 import '../../../../core/widgets/buttons/clinicq_outlined_button.dart';
 import '../../../auth/presentation/auth_providers.dart';
@@ -28,10 +27,11 @@ import '../widgets/queue_status_badge.dart';
 import '../widgets/upcoming_token_card.dart';
 
 /// Resolves the Doctor associated with a given Token ID
-final trackingDoctorProvider = FutureProvider.family<DoctorEntity?, String>((
-  ref,
-  tokenId,
-) async {
+final trackingDoctorProvider =
+    FutureProvider.autoDispose.family<DoctorEntity?, String>((
+      ref,
+      tokenId,
+    ) async {
   try {
     // 1. Check in-memory tokens
     final inMemTokens = ref.read(appointmentViewModelProvider).tokens;
@@ -72,16 +72,7 @@ final activeTokenLookupProvider = FutureProvider.autoDispose<Token?>((
   final appState = ref.watch(appointmentViewModelProvider);
   final currentUser = ref.watch(authRepositoryProvider).getCurrentUser();
 
-  bool isTokenActive(Token t) {
-    final s = t.status.toLowerCase().trim();
-    return s != 'completed' &&
-        s != 'cancelled' &&
-        s != 'canceled' &&
-        s != 'done' &&
-        s != 'rejected' &&
-        s != 'missed' &&
-        s != 'expired';
-  }
+  bool isTokenActive(Token t) => t.isActiveStatus;
 
   // 1. Check in-memory state first
   if (appState.tokens.isNotEmpty) {
@@ -131,39 +122,34 @@ final activeTokenLookupProvider = FutureProvider.autoDispose<Token?>((
         .read(tokensLocalDataSourceProvider)
         .getCachedTokens();
     if (cached.isNotEmpty) {
-      final activeCached = cached.where((r) {
-        final s = r.status.toLowerCase().trim();
-        final isActive =
-            s != 'completed' &&
-            s != 'cancelled' &&
-            s != 'canceled' &&
-            s != 'done' &&
-            s != 'rejected' &&
-            s != 'missed' &&
-            s != 'expired';
-        if (!isActive) return false;
-        if (currentUser != null && r.userId != currentUser.id) {
-          return false;
-        }
-        return true;
-      }).toList();
+      final activeCached = cached
+          .map(
+            (r) => Token(
+              id: r.id,
+              doctorId: r.doctorId,
+              clinicId: r.clinicId,
+              userId: r.userId,
+              notes: r.notes,
+              status: r.status,
+              tokenNumber: r.tokenNumber,
+              createdAt: r.createdAt,
+              isFromCache: true,
+            ),
+          )
+          .where((t) {
+            if (!t.isActiveStatus) return false;
+            if (currentUser != null && t.userId != currentUser.id) {
+              return false;
+            }
+            return true;
+          })
+          .toList();
 
       if (activeCached.isNotEmpty) {
         activeCached.sort(
           (a, b) => (b.createdAt ?? '').compareTo(a.createdAt ?? ''),
         );
-        final r = activeCached.first;
-        return Token(
-          id: r.id,
-          doctorId: r.doctorId,
-          clinicId: r.clinicId,
-          userId: r.userId,
-          notes: r.notes,
-          status: r.status,
-          tokenNumber: r.tokenNumber,
-          createdAt: r.createdAt,
-          isFromCache: true,
-        );
+        return activeCached.first;
       }
     }
   } catch (e) {
@@ -172,6 +158,57 @@ final activeTokenLookupProvider = FutureProvider.autoDispose<Token?>((
 
   return null;
 });
+
+/// Empty state shown when the user has no active appointment to track
+/// (none booked, or the latest token was cancelled / completed / skipped).
+Widget _buildNoActiveTokenBody(BuildContext context) {
+  return Center(
+    child: SingleChildScrollView(
+      padding: const EdgeInsets.all(32.0),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: ClinicQColors.primaryTeal.withOpacity(0.08),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.track_changes_rounded,
+              color: ClinicQColors.primaryTeal,
+              size: 48,
+            ),
+          ),
+          const SizedBox(height: 24),
+          const Text(
+            'No Active Token',
+            style: TextStyle(
+              color: ClinicQColors.textPrimary,
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'You do not have any active appointments at the moment.',
+            style: TextStyle(
+              color: ClinicQColors.textSecondary,
+              fontSize: 14,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 32),
+          ClinicQButton(
+            label: 'Book an Appointment',
+            gradient: ClinicQColors.gradientPrimary,
+            onPressed: () => context.go(AppRoutes.home),
+          ),
+        ],
+      ),
+    ),
+  );
+}
 
 class TrackingScreen extends ConsumerWidget {
   final String? tokenId;
@@ -234,52 +271,7 @@ class TrackingScreen extends ConsumerWidget {
       ),
       data: (activeToken) {
         if (activeToken == null) {
-          return Center(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(32.0),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(24),
-                    decoration: BoxDecoration(
-                      color: ClinicQColors.primaryTeal.withOpacity(0.08),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.track_changes_rounded,
-                      color: ClinicQColors.primaryTeal,
-                      size: 48,
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  const Text(
-                    'No Active Token',
-                    style: TextStyle(
-                      color: ClinicQColors.textPrimary,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  const Text(
-                    'You do not have any active appointments at the moment.',
-                    style: TextStyle(
-                      color: ClinicQColors.textSecondary,
-                      fontSize: 14,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 32),
-                  ClinicQButton(
-                    label: 'Book an Appointment',
-                    gradient: ClinicQColors.gradientPrimary,
-                    onPressed: () => context.go(AppRoutes.home),
-                  ),
-                ],
-              ),
-            ),
-          );
+          return _buildNoActiveTokenBody(context);
         }
         return _TrackingBody(tokenId: activeToken.id);
       },
@@ -385,22 +377,57 @@ class _TrackingBody extends ConsumerWidget {
       previous,
       next,
     ) {
-      if (next.snapshot?.status == 'completed') {
+      final snapshot = next.snapshot;
+      if (snapshot == null) return;
+
+      if (snapshot.isCompleted) {
         context.go('/tracking/$tokenId/completed');
+        return;
+      }
+
+      // Cancelled / skipped / missed / etc. — leave tracking for home.
+      // User-initiated cancels are handled by the cancel flow itself.
+      if (snapshot.isClosed) {
+        if (next.wasUserCancelled) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              snapshot.isCancelled
+                  ? 'Your appointment token has been cancelled.'
+                  : 'Your appointment token is no longer active.',
+            ),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 4),
+          ),
+        );
+        context.go(AppRoutes.home);
       }
     });
 
     final trackingState = ref.watch(trackingViewModelProvider(tokenId));
     final doctorAsync = ref.watch(trackingDoctorProvider(tokenId));
-    final isOffline = trackingState.isFromCache || trackingState.isStale;
+
+    // Live data only: when the token reaches a terminal status (cancelled,
+    // completed, skipped...), reset to the "No Active Token" screen instead
+    // of rendering any queue UI. Covers reopening the screen after the
+    // provider was recreated (ref.listen only fires on changes).
+    final snapshot = trackingState.snapshot;
+    final knownToken = ref
+        .watch(appointmentViewModelProvider)
+        .tokens
+        .where((t) => t.id == tokenId)
+        .firstOrNull;
+    final isTokenDead =
+        (snapshot?.isClosed ?? false) ||
+        (knownToken != null && knownToken.isClosedStatus);
+
+    if (isTokenDead) {
+      return SafeArea(child: _buildNoActiveTokenBody(context));
+    }
 
     return SafeArea(
       child: Column(
         children: [
-          if (isOffline)
-            const OfflineBanner(
-              message: 'Connection lost — showing cached queue status',
-            ),
           if (trackingState.snapshot?.status == 'paused')
             Container(
               width: double.infinity,
@@ -447,13 +474,15 @@ class _TrackingBody extends ConsumerWidget {
                       builder: (context) {
                         final snapshot = trackingState.snapshot;
                         final doctor = doctorAsync.value;
+                        // Use the API's authoritative boolean flags directly.
+                        // isQueueActive is set by the /queue/live endpoint.
+                        // Fall back to currentTokenNumber > 0 for the token
+                        // fallback path which does not return this boolean.
                         final isQueueRunning =
                             snapshot != null &&
-                            snapshot.currentTokenNumber > 0 &&
-                            snapshot.status != 'waiting' &&
-                            snapshot.status != 'upcoming' &&
-                            snapshot.status != 'not_started' &&
-                            snapshot.status != 'pending';
+                            (snapshot.isQueueActive ||
+                                snapshot.currentTokenNumber > 0) &&
+                            !snapshot.isQueuePaused;
 
                         if (!isQueueRunning && snapshot != null) {
                           return Column(

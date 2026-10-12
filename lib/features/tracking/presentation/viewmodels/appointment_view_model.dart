@@ -67,23 +67,29 @@ class AppointmentNotifier extends Notifier<AppointmentState> {
     }
   }
 
+  /// Patches the in-memory token list with a status reported by live data
+  /// (e.g. cancelled, completed, skipped) without hitting the repository.
+  void markTokenStatus(String id, String status) {
+    final updatedTokens = state.tokens.map((t) {
+      if (t.id == id && t.normalizedStatus != status.toLowerCase().trim()) {
+        return t.copyWith(status: status);
+      }
+      return t;
+    }).toList();
+
+    state = state.copyWith(tokens: updatedTokens);
+  }
+
+  void markTokenCancelled(String id) => markTokenStatus(id, 'cancelled');
+
   Future<bool> cancelToken(String id) async {
     state = state.copyWith(isLoading: true, errorMessage: null);
     try {
       await ref.read(appointmentRepositoryProvider).cancelToken(id);
-      
-      // Update local state status
-      final updatedTokens = state.tokens.map((t) {
-        if (t.id == id) {
-          return t.copyWith(status: 'cancelled');
-        }
-        return t;
-      }).toList();
-      
-      state = state.copyWith(
-        tokens: updatedTokens,
-        isLoading: false,
-      );
+
+      markTokenCancelled(id);
+
+      state = state.copyWith(isLoading: false);
       return true;
     } catch (e) {
       state = state.copyWith(

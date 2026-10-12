@@ -6,6 +6,7 @@ class TrackingState {
   final String? errorMessage;
   final bool isFromCache;
   final bool isStale;
+  final bool wasUserCancelled;
   final int feedbackRating;
   final String feedbackText;
   final bool isFeedbackSubmitting;
@@ -17,6 +18,7 @@ class TrackingState {
     this.errorMessage,
     this.isFromCache = false,
     this.isStale = false,
+    this.wasUserCancelled = false,
     this.feedbackRating = 5,
     this.feedbackText = '',
     this.isFeedbackSubmitting = false,
@@ -29,6 +31,7 @@ class TrackingState {
     String? errorMessage,
     bool? isFromCache,
     bool? isStale,
+    bool? wasUserCancelled,
     int? feedbackRating,
     String? feedbackText,
     bool? isFeedbackSubmitting,
@@ -40,6 +43,7 @@ class TrackingState {
       errorMessage: errorMessage,
       isFromCache: isFromCache ?? this.isFromCache,
       isStale: isStale ?? this.isStale,
+      wasUserCancelled: wasUserCancelled ?? this.wasUserCancelled,
       feedbackRating: feedbackRating ?? this.feedbackRating,
       feedbackText: feedbackText ?? this.feedbackText,
       isFeedbackSubmitting: isFeedbackSubmitting ?? this.isFeedbackSubmitting,

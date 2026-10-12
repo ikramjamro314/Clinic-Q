@@ -10,10 +10,16 @@ class TrackingApiService {
   TrackingApiService(this._dio);
 
   Future<TrackingSnapshotModel> getLiveTracking(String tokenId, {String? userId}) async {
-    // 1. Get Doctor ID for this token
+    // 1. Get Doctor ID and the token's own authoritative status in one call.
+    //    The token status matters when the token no longer appears in the
+    //    live queue list (e.g. it was cancelled and removed) — otherwise we
+    //    would fall back to the queue-level status and keep showing "waiting".
     String? doctorId;
+    String? tokenOwnStatus;
     try {
-      doctorId = await getDoctorIdForToken(tokenId);
+      final tokenDetails = await _getTokenDetails(tokenId);
+      doctorId = tokenDetails?['doctorId'] as String? ?? tokenDetails?['doctor_id'] as String?;
+      tokenOwnStatus = tokenDetails?['status'] as String?;
     } catch (e) {
       print('[Tracking] Error fetching doctor ID for token in getLiveTracking: $e');
     }
@@ -47,8 +53,12 @@ class TrackingApiService {
             }
           }
 
+          final isQueueActive = rawData['isQueueActive'] as bool? ?? false;
+          final isQueuePaused = rawData['isQueuePaused'] as bool? ?? false;
+
           final queueStatus = rawData['queueStatus'] as String? ?? rawData['queue_status'] as String?;
-          final isPaused = (queueStatus != null && queueStatus.toUpperCase() == 'PAUSED') ||
+          final isPaused = isQueuePaused ||
+              (queueStatus != null && queueStatus.toUpperCase() == 'PAUSED') ||
               rawData['status'] == 'paused' ||
               rawData['isPaused'] == true;
 
@@ -66,7 +76,7 @@ class TrackingApiService {
                 ? null
                 : (myTokenJson['estimatedWaitMinutes'] as int? ??
                     myTokenJson['estimated_wait_minutes'] as int?);
-            statusVal = myTokenJson['status'] as String? ?? (isPaused ? 'paused' : 'waiting');
+            statusVal = myTokenJson['status'] as String? ?? tokenOwnStatus ?? (isPaused ? 'paused' : 'waiting');
           } else {
             yourToken = rawData['yourTokenNumber'] as int? ??
                 rawData['tokenNumber'] as int? ?? 0;
@@ -76,7 +86,10 @@ class TrackingApiService {
                 ? null
                 : (rawData['estimatedWaitMinutes'] as int? ??
                     rawData['estimated_wait_minutes'] as int?);
-            statusVal = rawData['status'] as String? ?? (isPaused ? 'paused' : 'waiting');
+            // Token is missing from the live queue list — it may have been
+            // cancelled/removed. Prefer the token's own status over the
+            // queue-level status so cancelled tokens don't look "waiting".
+            statusVal = tokenOwnStatus ?? rawData['status'] as String? ?? (isPaused ? 'paused' : 'waiting');
           }
 
           final maxLimit = rawData['maxTokensPerDay'] as int? ?? rawData['dailyTokenCap'] as int?;
@@ -107,6 +120,8 @@ class TrackingApiService {
             queueStatus: queueStatus,
             estimatedTime: estTime,
             activeTokenId: activeTokenIdVal,
+            isQueueActive: isQueueActive,
+            isQueuePaused: isQueuePaused,
           );
         }
       } catch (e) {
@@ -130,17 +145,22 @@ class TrackingApiService {
     return TrackingSnapshotModel.fromJson(rawData as Map<String, dynamic>, tokenId);
   }
 
-  Future<String?> getDoctorIdForToken(String tokenId) async {
+  Future<Map<String, dynamic>?> _getTokenDetails(String tokenId) async {
     try {
       final response = await _dio.get('/api/patient/tokens/$tokenId');
       final rawData = ApiResponse.process(response.data);
       if (rawData is Map<String, dynamic>) {
-        return rawData['doctorId'] as String? ?? rawData['doctor_id'] as String?;
+        return rawData;
       }
     } catch (e) {
-      print('[TrackingApiService] Error fetching doctor ID: $e');
+      print('[TrackingApiService] Error fetching token details: $e');
     }
     return null;
+  }
+
+  Future<String?> getDoctorIdForToken(String tokenId) async {
+    final details = await _getTokenDetails(tokenId);
+    return details?['doctorId'] as String? ?? details?['doctor_id'] as String?;
   }
 
   Future<String?> getClinicIdForToken(String tokenId) async {

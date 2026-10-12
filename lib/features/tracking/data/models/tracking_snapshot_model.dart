@@ -17,6 +17,8 @@ class TrackingSnapshotModel extends TrackingSnapshot {
     super.queueStatus,
     super.activeTokenId,
     super.appointmentDate,
+    super.isQueueActive = false,
+    super.isQueuePaused = false,
     super.isFromCache = false,
     super.isStale = false,
   });
@@ -36,12 +38,14 @@ class TrackingSnapshotModel extends TrackingSnapshot {
 
     final queueStatus = json['queueStatus'] as String? ??
         json['queue_status'] as String?;
-    final isPaused = (queueStatus != null && queueStatus.toUpperCase() == 'PAUSED') ||
+    final isQueueActive = json['isQueueActive'] as bool? ?? false;
+    final isQueuePaused = (json['isQueuePaused'] as bool? ?? false) ||
+        (queueStatus != null && queueStatus.toUpperCase() == 'PAUSED') ||
         json['status'] == 'paused' ||
         json['isPaused'] == true;
 
     // Paused queues & future appointments return null estimatedWaitMinutes
-    final estWait = isPaused
+    final estWait = isQueuePaused
         ? null
         : (json['estimatedWaitMinutes'] as int? ??
             json['estimated_wait_minutes'] as int? ??
@@ -54,7 +58,7 @@ class TrackingSnapshotModel extends TrackingSnapshot {
         json['active_token_id'] as String? ??
         json['myTokenId'] as String?;
 
-    final statusVal = json['status'] as String? ?? (isPaused ? 'paused' : 'waiting');
+    final statusVal = json['status'] as String? ?? (isQueuePaused ? 'paused' : 'waiting');
     final maxLimit = json['maxTokensPerDay'] as int? ??
         json['dailyTokenCap'] as int?;
 
@@ -86,6 +90,8 @@ class TrackingSnapshotModel extends TrackingSnapshot {
       queueStatus: queueStatus,
       activeTokenId: activeTokenIdVal,
       appointmentDate: appointmentDateVal,
+      isQueueActive: isQueueActive,
+      isQueuePaused: isQueuePaused,
     );
   }
 
@@ -102,6 +108,8 @@ class TrackingSnapshotModel extends TrackingSnapshot {
       'queueStatus': queueStatus,
       'activeTokenId': activeTokenId,
       'appointmentDate': appointmentDate,
+      'isQueueActive': isQueueActive,
+      'isQueuePaused': isQueuePaused,
     };
   }
 }

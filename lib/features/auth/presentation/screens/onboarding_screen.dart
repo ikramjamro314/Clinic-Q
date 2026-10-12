@@ -32,139 +32,219 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final onboardingState = ref.watch(onboardingViewModelProvider);
     final onboardingNotifier = ref.read(onboardingViewModelProvider.notifier);
 
     return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
+      backgroundColor: ClinicQColors.appBackground,
       body: SafeArea(
-        child: Column(
-          children: [
-            const SizedBox(height: 12),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final screenWidth = constraints.maxWidth;
+            final screenHeight = constraints.maxHeight;
 
-            // Main Page Content (Illustration card + Headline + Description)
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: PageView(
-                  controller: _pageController,
-                  onPageChanged: onboardingNotifier.setCurrentIndex,
-                  children: [
-                    OnboardingSlide(
-                      title: 'Easy appointment\nbooking.',
-                      description:
-                          'Book with confidence\n- Easy to use\n- Quick operation',
-                      imageAssetPath: 'assets/onboarding/step_1.jpeg',
-                      stepNumber: 1,
-                      totalSteps: onboardingState.totalSlides,
-                      onSkip: _finishOnboarding,
-                      showSkip:
-                          onboardingState.currentIndex <
-                          onboardingState.totalSlides - 1,
-                    ),
-                    OnboardingSlide(
-                      title: 'Track your place\nin the line.',
-                      description:
-                          'Your queue number is confirmed.\nReal-time updates let you know exactly when it is your turn.',
-                      imageAssetPath: 'assets/onboarding/step_2.jpeg',
-                      stepNumber: 2,
-                      totalSteps: onboardingState.totalSlides,
-                      onSkip: _finishOnboarding,
-                      showSkip:
-                          onboardingState.currentIndex <
-                          onboardingState.totalSlides - 1,
-                    ),
-                    OnboardingSlide(
-                      title: 'Booking confirmed\n& all set!',
-                      description:
-                          'Experience seamless healthcare consultations with fast check-ins and prompt care.',
-                      imageAssetPath: 'assets/onboarding/step_3.jpeg',
-                      stepNumber: 3,
-                      totalSteps: onboardingState.totalSlides,
-                      onSkip: _finishOnboarding,
-                      showSkip:
-                          onboardingState.currentIndex <
-                          onboardingState.totalSlides - 1,
-                    ),
-                  ],
-                ),
-              ),
-            ),
+            // Ideal card width: ~87% of screen width (6.5% horizontal margin on both sides)
+            final idealCardWidth = screenWidth * 0.87;
+            final idealCardHeight = idealCardWidth * (680.0 / 540.0);
 
-            // Bottom Row: Step indicator dots (left) & Circular Next Button (right)
-            Padding(
-              padding: const EdgeInsets.only(
-                left: 24,
-                right: 24,
-                bottom: 28,
-                top: 8,
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  // Step Progress Dots
-                  Row(
-                    children: List.generate(onboardingState.totalSlides, (
-                      index,
-                    ) {
-                      final isSelected = index == onboardingState.currentIndex;
-                      return AnimatedContainer(
-                        duration: const Duration(milliseconds: 250),
-                        curve: Curves.easeInOut,
-                        margin: const EdgeInsets.only(right: 6),
-                        width: isSelected ? 24 : 6,
-                        height: 6,
-                        decoration: BoxDecoration(
-                          color: isSelected
-                              ? ClinicQColors.primaryTeal
-                              : ClinicQColors.dividerStrong,
-                          borderRadius: BorderRadius.circular(3),
-                        ),
-                      );
-                    }),
+            // Vertical space required for non-card elements:
+            // topSpacing + cardToTextSpacing + heading + textToDescSpacing + description + gap + button + bottomMargin
+            final nonCardHeightNeeded =
+                (screenHeight * 0.065).clamp(18.0, 38.0) +
+                20.0 +
+                58.0 +
+                10.0 +
+                56.0 +
+                16.0 +
+                64.0 +
+                24.0;
+
+            final maxCardHeightAllowed = (screenHeight - nonCardHeightNeeded)
+                .clamp(180.0, screenHeight * 0.52);
+
+            // Scale card proportionally on short screens to prevent any overflow or scrolling
+            final double cardHeight;
+            final double cardWidth;
+            if (idealCardHeight > maxCardHeightAllowed) {
+              cardHeight = maxCardHeightAllowed;
+              cardWidth = cardHeight * (540.0 / 680.0);
+            } else {
+              cardWidth = idealCardWidth;
+              cardHeight = idealCardHeight;
+            }
+
+            // Card corner radius: ~7.5% of card width
+            final cardCornerRadius = cardWidth * 0.075;
+
+            // Top spacing: ~6% to 7% of screen height below status bar
+            final topSpacing = (screenHeight * 0.065).clamp(16.0, 36.0);
+            final cardToTextSpacing =
+                (screenHeight * 0.026).clamp(16.0, 22.0) + 20;
+            const textToDescSpacing = 12.0;
+            const bottomMargin = 24.0;
+
+            // Text and indicator dots align slightly inside card's left edge (16px at 612px Figma ref)
+            final cardLeft = (screenWidth - cardWidth) / 2.0;
+            final figmaInset = (16.0 / 612.0) * screenWidth;
+            final contentHorizontalPadding = cardLeft + figmaInset;
+
+            final headingFontSize =
+                (screenWidth * 0.065).clamp(22.0, 28.0) + 10;
+            final descFontSize = (screenWidth * 0.038).clamp(14.0, 16.0) + 3;
+
+            return Column(
+              children: [
+                // Swipable slides (Card + Headline + Description)
+                Expanded(
+                  child: PageView(
+                    controller: _pageController,
+                    onPageChanged: onboardingNotifier.setCurrentIndex,
+                    children: [
+                      OnboardingSlide(
+                        title: 'Book your token from home.',
+                        description:
+                            'Pick your doctor and a day that suits you, then book in a few taps. No paper slip needed.',
+                        imageAssetPath: 'assets/onboarding/step_1.png',
+                        stepNumber: 1,
+                        totalSteps: onboardingState.totalSlides,
+                        onSkip: _finishOnboarding,
+                        showSkip:
+                            onboardingState.currentIndex <
+                            onboardingState.totalSlides - 1,
+                        cardWidth: cardWidth,
+                        cardHeight: cardHeight,
+                        cardCornerRadius: cardCornerRadius,
+                        topSpacing: topSpacing,
+                        cardToTextSpacing: cardToTextSpacing,
+                        textToDescSpacing: textToDescSpacing,
+                        contentHorizontalPadding: contentHorizontalPadding,
+                        headingFontSize: headingFontSize,
+                        descFontSize: descFontSize,
+                      ),
+                      OnboardingSlide(
+                        title: 'Follow your turn live.',
+                        description:
+                            'After booking, see who is being served and how many people are ahead of you, with a live wait estimate.',
+                        imageAssetPath: 'assets/onboarding/step_2.png',
+                        stepNumber: 2,
+                        totalSteps: onboardingState.totalSlides,
+                        onSkip: _finishOnboarding,
+                        showSkip:
+                            onboardingState.currentIndex <
+                            onboardingState.totalSlides - 1,
+                        cardWidth: cardWidth,
+                        cardHeight: cardHeight,
+                        cardCornerRadius: cardCornerRadius,
+                        topSpacing: topSpacing,
+                        cardToTextSpacing: cardToTextSpacing,
+                        textToDescSpacing: textToDescSpacing,
+                        contentHorizontalPadding: contentHorizontalPadding,
+                        headingFontSize: headingFontSize,
+                        descFontSize: descFontSize,
+                      ),
+                      OnboardingSlide(
+                        title: 'We tell you when it\'s time.',
+                        description:
+                            'Get a notification when your turn is near, so you can wait anywhere and arrive just in time.',
+                        imageAssetPath: 'assets/onboarding/step_3.png',
+                        stepNumber: 3,
+                        totalSteps: onboardingState.totalSlides,
+                        onSkip: _finishOnboarding,
+                        showSkip:
+                            onboardingState.currentIndex <
+                            onboardingState.totalSlides - 1,
+                        cardWidth: cardWidth,
+                        cardHeight: cardHeight,
+                        cardCornerRadius: cardCornerRadius,
+                        topSpacing: topSpacing,
+                        cardToTextSpacing: cardToTextSpacing,
+                        textToDescSpacing: textToDescSpacing,
+                        contentHorizontalPadding: contentHorizontalPadding,
+                        headingFontSize: headingFontSize,
+                        descFontSize: descFontSize,
+                      ),
+                    ],
                   ),
+                ),
 
-                  // Circular Next Button with Primary Gradient
-                  Material(
-                    color: Colors.transparent,
-                    child: InkWell(
-                      onTap: () {
-                        onboardingNotifier.nextPage(
-                          _pageController,
-                          _finishOnboarding,
-                        );
-                      },
-                      borderRadius: BorderRadius.circular(30),
-                      child: Container(
-                        width: 58,
-                        height: 58,
-                        decoration: BoxDecoration(
-                          gradient: ClinicQColors.gradientPrimary,
-                          shape: BoxShape.circle,
-                          boxShadow: [
-                            BoxShadow(
-                              color: ClinicQColors.primaryTeal.withOpacity(
-                                0.38,
-                              ),
-                              blurRadius: 16,
-                              offset: const Offset(0, 6),
+                // Bottom Row: Indicator dots (left) & Round Arrow Button (right)
+                Padding(
+                  padding: EdgeInsets.only(
+                    left: contentHorizontalPadding,
+                    right: contentHorizontalPadding,
+                    bottom: bottomMargin,
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      // Step Progress Dots
+                      Row(
+                        children: List.generate(onboardingState.totalSlides, (
+                          index,
+                        ) {
+                          final isSelected =
+                              index == onboardingState.currentIndex;
+                          return AnimatedContainer(
+                            duration: const Duration(milliseconds: 250),
+                            curve: Curves.easeInOut,
+                            margin: const EdgeInsets.only(right: 6),
+                            width: isSelected ? 26 : 8,
+                            height: 8,
+                            decoration: BoxDecoration(
+                              gradient: isSelected
+                                  ? ClinicQColors.gradientPrimary
+                                  : null,
+                              color: isSelected
+                                  ? null
+                                  : ClinicQColors.buttonDisabledBackground,
+                              borderRadius: BorderRadius.circular(4),
                             ),
-                          ],
-                        ),
-                        child: const Icon(
-                          Icons.arrow_forward_rounded,
-                          color: Colors.white,
-                          size: 26,
+                          );
+                        }),
+                      ),
+
+                      // 64dp Circular Next Button with Gradient and Glow Shadow
+                      Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          onTap: () {
+                            onboardingNotifier.nextPage(
+                              _pageController,
+                              _finishOnboarding,
+                            );
+                          },
+                          borderRadius: BorderRadius.circular(32),
+                          child: Container(
+                            width: 64,
+                            height: 64,
+                            decoration: BoxDecoration(
+                              gradient: ClinicQColors.gradientPrimary,
+                              shape: BoxShape.circle,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: ClinicQColors.primaryTeal.withOpacity(
+                                    0.38,
+                                  ),
+                                  blurRadius: 18,
+                                  offset: const Offset(0, 6),
+                                ),
+                              ],
+                            ),
+                            child: const Icon(
+                              Icons.arrow_forward_rounded,
+                              color: ClinicQColors.textWhite,
+                              size: 28,
+                            ),
+                          ),
                         ),
                       ),
-                    ),
+                    ],
                   ),
-                ],
-              ),
-            ),
-          ],
+                ),
+              ],
+            );
+          },
         ),
       ),
     );
